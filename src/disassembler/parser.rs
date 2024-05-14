@@ -139,9 +139,13 @@ pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseErro
                     unimplemented!()
                 }
                 // SUB Imm from r/m
-                0b101 => {
-                    unimplemented!()
-                }
+                0b101 => Ok((
+                    IR::Sub {
+                        dest: rm,
+                        src: data,
+                    },
+                    total_consumed,
+                )),
                 // SSB Imm from r/m
                 0b011 => {
                     unimplemented!()
@@ -284,12 +288,27 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_sub() {
+        // r/m and reg
         let bytes = [0x28, 0x00];
         let expected_result = (
             Instruction::new(
                 IR::Sub {
                     dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
                     src: Operand::Register(Register::AL),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+
+        // Imm from r/m
+        let bytes = [0x83, 0xeb, 0x14];
+        let expected_result = (
+            Instruction::new(
+                IR::Sub {
+                    dest: Operand::Register(Register::BX),
+                    src: Operand::Immediate(0x14),
                 },
                 bytes.to_vec(),
             ),
