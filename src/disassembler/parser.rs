@@ -1,5 +1,6 @@
 use super::error::ParseError;
 use super::instruction::{Operand, IR};
+use super::memory::Memory;
 use super::register::Register;
 
 /// Parses the given byte slice and returns the parsed instruction along with the number of bytes consumed.
@@ -51,6 +52,28 @@ pub fn parse_instruction(bytes: &[u8]) -> Result<(IR, usize), ParseError> {
             let int_type = if specified { bytes[1] } else { 3 };
 
             Ok((IR::Int { int_type }, 1 + specified as usize))
+        }
+        // ADD r/m, r/e
+        0b00000000..=0x00000011 => {
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+            let d: bool = (opcode & 0b00000010) != 0;
+            let w = (opcode & 0b00000001) != 0;
+
+            let mod_ = (bytes[1] & 0b11000000) >> 6;
+            let reg = Register::from((bytes[1] & 0b00111000) >> 3, w);
+            let rm = bytes[1] & 0b00000111;
+
+            let rm = Memory::from_modrm(mod_, rm, &[], w);
+
+            let (dest, src) = if d {
+                (Operand::Register(reg), Operand::Memory(rm))
+            } else {
+                (Operand::Memory(rm), Operand::Register(reg))
+            };
+
+            Ok((IR::Add { dest, src }, 2))
         }
         _ => Err(ParseError::InvalidOpcode(opcode)),
     }

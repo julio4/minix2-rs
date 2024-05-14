@@ -24,9 +24,8 @@ impl Display for Operand {
 #[derive(Debug, PartialEq)]
 pub enum IR {
     Mov { dest: Operand, src: Operand },
-    // Push { src: Operand },
-    // Pop { dest: Operand },
     Int { int_type: u8 },
+    Add { dest: Operand, src: Operand },
 }
 
 impl Display for IR {
@@ -40,6 +39,7 @@ impl Display for IR {
                     write!(f, "int {:02x}", int_type)
                 }
             }
+            IR::Add { dest, src } => write!(f, "add {}, {}", dest, src),
         }
     }
 }
@@ -62,5 +62,5 @@ impl Display for Instruction {
         // 0xbb00   mov bx, 0x0000
         // cd20     int 20
         write!(f, "{:02x?}\t{}", self.raw, self.ir)
-            }
+    }
 }
