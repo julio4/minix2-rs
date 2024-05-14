@@ -131,9 +131,13 @@ pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseErro
             let bits = (bytes[1] & 0b00111000) >> 3;
             match bits {
                 // ADD Imm to r/m
-                0b000 => {
-                    unimplemented!()
-                }
+                0b000 => Ok((
+                    IR::Add {
+                        dest: rm,
+                        src: data,
+                    },
+                    total_consumed,
+                )),
                 // ADC Imm to r/m
                 0b010 => {
                     unimplemented!()
@@ -272,12 +276,27 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_add() {
+        // r/m and reg
         let bytes = [0x00, 0x00];
         let expected_result = (
             Instruction::new(
                 IR::Add {
                     dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
                     src: Operand::Register(Register::AL),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+
+        // Imm with r/m
+        let bytes = [0x83, 0xc3, 0x14];
+        let expected_result = (
+            Instruction::new(
+                IR::Add {
+                    dest: Operand::Register(Register::BX),
+                    src: Operand::Immediate(0x14),
                 },
                 bytes.to_vec(),
             ),
