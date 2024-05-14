@@ -105,6 +105,58 @@ pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseErro
             let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
             Ok((IR::Les { dest, src }, bytes_consumed + 1))
         }
+        // Immediate with/to Register/Memory
+        0b10000000..=0b10000011 => {
+            let s = (opcode & 0b00000010) != 0;
+            let w = (opcode & 0b00000001) != 0;
+            let is_word_data = !s && w;
+            let total_consumed = 3 + is_word_data as usize;
+            if bytes.len() < total_consumed {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let data = if is_word_data {
+                Operand::LongImmediate(u16::from_le_bytes([bytes[2], bytes[3]]))
+            } else {
+                Operand::Immediate(u8::from_le_bytes([bytes[2]]).into())
+            };
+
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
+            // next byte is the immediate data, so we should have consumed 1 bytes only
+            if bytes_consumed != 1 {
+                return Err(ParseError::InvalidOpcode(bytes[1]));
+            }
+
+            // We need bits 5-2 from bytes 2
+            let bits = (bytes[1] & 0b00111000) >> 3;
+            match bits {
+                // ADD Imm to r/m
+                0b000 => {
+                    unimplemented!()
+                }
+                // ADC Imm to r/m
+                0b010 => {
+                    unimplemented!()
+                }
+                // SUB Imm from r/m
+                0b101 => {
+                    unimplemented!()
+                }
+                // SSB Imm from r/m
+                0b011 => {
+                    unimplemented!()
+                }
+                // CMP Imm with r/m
+                0b111 => Ok((
+                    IR::Cmp {
+                        dest: rm,
+                        src: data,
+                    },
+                    total_consumed,
+                )),
+                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+            }
+        }
         _ => Err(ParseError::InvalidOpcode(opcode)),
     };
 
@@ -264,12 +316,27 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_cmp() {
+        // r/m and reg
         let bytes = [0x38, 0x00];
         let expected_result = (
             Instruction::new(
                 IR::Cmp {
                     dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
                     src: Operand::Register(Register::AL),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+
+        // Imm with r/m
+        let bytes = [0x81, 0xfb, 0x14, 0x00];
+        let expected_result = (
+            Instruction::new(
+                IR::Cmp {
+                    dest: Operand::Register(Register::BX),
+                    src: Operand::LongImmediate(0x0014),
                 },
                 bytes.to_vec(),
             ),
