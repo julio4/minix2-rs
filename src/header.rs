@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::disassembler::error::ParseError;
 use crate::utils::HexdumpFormatter;
 
 #[derive(PartialEq)]
@@ -21,30 +22,48 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn parse(binary: &[u8]) -> Result<Header, &str> {
+    pub fn parse(binary: &[u8]) -> Result<Header, ParseError> {
         // Slice of 32 bytes with Error if less than 32 bytes
         let b = match binary.get(0..32) {
             Some(b) => b,
-            None => return Err("Binary file is less than 32 bytes"),
+            None => return Err(ParseError::InvalidSize),
         };
 
         // little endian
         let header = Header {
-            raw: b.try_into().map_err(|_| "Error converting header")?,
+            raw: b.try_into().map_err(|_| ParseError::CorruptedData)?,
             magic: b[0..2].try_into().unwrap(),
             flags: b[2],
             cpu: b[3],
             hdrlen: b[4],
             unused: b[5],
-            version: u16::from_le_bytes(
-                b[6..8].try_into().map_err(|_| "Error converting version")?,
+            version: u16::from_le_bytes(b[6..8].try_into().map_err(|_| ParseError::CorruptedData)?),
+            text: u32::from_le_bytes(b[8..12].try_into().map_err(|_| ParseError::CorruptedData)?),
+            data: u32::from_le_bytes(
+                b[12..16]
+                    .try_into()
+                    .map_err(|_| ParseError::CorruptedData)?,
             ),
-            text: u32::from_le_bytes(b[8..12].try_into().map_err(|_| "Error converting text")?),
-            data: u32::from_le_bytes(b[12..16].try_into().map_err(|_| "Error converting data")?),
-            bss: u32::from_le_bytes(b[16..20].try_into().map_err(|_| "Error converting bss")?),
-            entry: u32::from_le_bytes(b[20..24].try_into().map_err(|_| "Error converting entry")?),
-            total: u32::from_le_bytes(b[24..28].try_into().map_err(|_| "Error converting total")?),
-            syms: u32::from_le_bytes(b[28..32].try_into().map_err(|_| "Error converting syms")?),
+            bss: u32::from_le_bytes(
+                b[16..20]
+                    .try_into()
+                    .map_err(|_| ParseError::CorruptedData)?,
+            ),
+            entry: u32::from_le_bytes(
+                b[20..24]
+                    .try_into()
+                    .map_err(|_| ParseError::CorruptedData)?,
+            ),
+            total: u32::from_le_bytes(
+                b[24..28]
+                    .try_into()
+                    .map_err(|_| ParseError::CorruptedData)?,
+            ),
+            syms: u32::from_le_bytes(
+                b[28..32]
+                    .try_into()
+                    .map_err(|_| ParseError::CorruptedData)?,
+            ),
         };
 
         Ok(header)
@@ -91,6 +110,6 @@ mod tests {
         assert_eq!(binary.len(), 10);
 
         let header = Header::parse(&binary);
-        assert_eq!(header, Err("Binary file is less than 32 bytes"));
+        assert_eq!(header, Err(ParseError::InvalidSize));
     }
 }

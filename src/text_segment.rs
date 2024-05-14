@@ -1,18 +1,21 @@
 use std::fmt;
 
+use crate::disassembler::error::ParseError;
 use crate::utils::HexdumpFormatter;
 
+/// Raw binary data of the text segment.
+/// For the high-level representation of the text segment, see `Program`.
 #[derive(PartialEq)]
 pub struct TextSegment {
     pub text: Vec<u8>,
 }
 
 impl TextSegment {
-    pub fn parse(binary: &[u8], size: u32) -> Result<TextSegment, &str> {
+    pub fn parse(binary: &[u8], size: u32) -> Result<TextSegment, ParseError> {
         // get from 33th byte to 33th + size byte
         let b = match binary.get(32..32 + size as usize) {
             Some(b) => b,
-            None => return Err("Incorrect text segment size"),
+            None => return Err(ParseError::InvalidSize),
         };
 
         Ok(TextSegment { text: b.to_vec() })
@@ -27,18 +30,7 @@ impl fmt::Debug for TextSegment {
 
 impl fmt::Display for TextSegment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        /* For now we hardcode:
-        0000: bb0000   mov bx, 0000
-        0003: cd20     int 20
-        0005: b1000    mov bx, 0010
-        0008: cd20     int 20
-        000a: 0000     add [bx+si], al
-        000c: 0000     add [bx+si], al
-        000e: 0000     add [bx+si], al
-        */
-        // Next step will be to lex/parse text segment
-        let str = "0000: bb0000   mov bx, 0000\n0003: cd20     int 20\n0005: b1000    mov bx, 0010\n0008: cd20     int 20\n000a: 0000     add [bx+si], al\n000c: 0000     add [bx+si], al\n000e: 0000     add [bx+si], al";
-        write!(f, "{}", str)
+        write!(f, "{:?}", HexdumpFormatter(&self.text))
     }
 }
 
@@ -84,6 +76,6 @@ mod tests {
         let header = Header::parse(&binary).unwrap();
         let text_segment = TextSegment::parse(&binary, header.text);
 
-        assert_eq!(text_segment, Err("Incorrect text segment size"));
+        assert_eq!(text_segment, Err(ParseError::InvalidSize));
     }
 }
