@@ -2,6 +2,7 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
+use minix2_rs::disassembler::program::Program;
 use minix2_rs::header::Header;
 use minix2_rs::text_segment::TextSegment;
 
@@ -41,5 +42,6 @@ fn main() {
         }
     };
 
-    println!("{}", text_segment);
+    // Parse instructions from text segment
+    let _program = Program::from_text_segment(text_segment).unwrap();
 }

@@ -1,13 +1,13 @@
 use super::{parse_instruction, ParseError};
-use crate::{disassembler::Instruction, text_segment::TextSegment};
+use crate::{disassembler::IR, text_segment::TextSegment};
 
 /// The high-level representation of a program.
 pub struct Program {
-    pub instructions: Vec<Instruction>,
+    pub instructions: Vec<IR>,
 }
 
 impl Program {
-    pub fn new(instructions: Vec<Instruction>) -> Self {
+    pub fn new(instructions: Vec<IR>) -> Self {
         Program { instructions }
     }
 
@@ -17,6 +17,7 @@ impl Program {
 
         while !text.is_empty() {
             let (instruction, bytes_consumed) = parse_instruction(text)?;
+            println!("{}", instruction);
             instructions.push(instruction);
             text = &text[bytes_consumed..];
         }
@@ -33,15 +34,15 @@ mod tests {
     #[test]
     fn test_new() {
         let instructions = vec![
-            Instruction::Mov {
+            IR::Mov {
                 dest: Operand::Register(Register::AX),
                 src: Operand::Register(Register::AX),
             },
-            Instruction::Mov {
+            IR::Mov {
                 dest: Operand::Register(Register::AX),
                 src: Operand::Register(Register::AX),
             },
-            Instruction::Mov {
+            IR::Mov {
                 dest: Operand::Register(Register::AX),
                 src: Operand::Register(Register::AX),
             },
@@ -59,7 +60,7 @@ mod tests {
         assert_eq!(program.instructions.len(), 1);
         assert_eq!(
             program.instructions[0],
-            Instruction::Mov {
+            IR::Mov {
                 dest: Operand::Register(Register::BX),
                 src: Operand::LongImmediate(0x0000),
             }

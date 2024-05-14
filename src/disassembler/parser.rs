@@ -1,5 +1,5 @@
 use super::error::ParseError;
-use super::instruction::{Instruction, Operand};
+use super::instruction::{Operand, IR};
 use super::register::Register;
 
 /// Parses the given byte slice and returns the parsed instruction along with the number of bytes consumed.
@@ -12,7 +12,7 @@ use super::register::Register;
 ///
 /// Returns a `Result` containing a tuple with the parsed `Instruction` and the number of bytes consumed.
 /// If parsing fails, a `ParseError` is returned.
-pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseError> {
+pub fn parse_instruction(bytes: &[u8]) -> Result<(IR, usize), ParseError> {
     if bytes.is_empty() {
         return Err(ParseError::UnexpectedEOF);
     }
@@ -34,14 +34,24 @@ pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseErro
             };
 
             Ok((
-                Instruction::Mov {
+                IR::Mov {
                     dest: reg,
                     src: imm,
                 },
                 2 + w as usize,
             ))
         }
-        // Add more opcodes here
+        // INT
+        0b11001100..=0b11001101 => {
+            let specified = (opcode & 0b00000001) != 0;
+            if bytes.len() < (1 + specified as usize) {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let int_type = if specified { bytes[1] } else { 3 };
+
+            Ok((IR::Int { int_type }, 1 + specified as usize))
+        }
         _ => Err(ParseError::InvalidOpcode(opcode)),
     }
 }
@@ -55,7 +65,7 @@ mod tests {
         // 8 bits
         let bytes = [0xb0, 0x00];
         let expected_result = (
-            Instruction::Mov {
+            IR::Mov {
                 dest: Operand::Register(Register::AL),
                 src: Operand::Immediate(0x00),
             },
@@ -66,7 +76,7 @@ mod tests {
         // 16 bits
         let bytes = [0xbb, 0x00, 0x00];
         let expected_result = (
-            Instruction::Mov {
+            IR::Mov {
                 dest: Operand::Register(Register::BX),
                 src: Operand::LongImmediate(0x0000),
             },

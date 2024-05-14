@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Register {
     AX,
     CX,
@@ -45,5 +45,29 @@ impl Register {
             0b1111 => Register::DI,
             _ => unreachable!(),
         }
+    }
+}
+
+impl std::fmt::Display for Register {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reg = match self {
+            Register::AX => "ax",
+            Register::CX => "cx",
+            Register::DX => "dx",
+            Register::BX => "bx",
+            Register::SP => "sp",
+            Register::BP => "bp",
+            Register::SI => "si",
+            Register::DI => "di",
+            Register::AL => "al",
+            Register::CL => "cl",
+            Register::DL => "dl",
+            Register::BL => "bl",
+            Register::AH => "ah",
+            Register::CH => "ch",
+            Register::DH => "dh",
+            Register::BH => "bh",
+        };
+        write!(f, "{}", reg)
     }
 }
