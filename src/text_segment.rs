@@ -1,20 +1,14 @@
 use std::fmt;
 
-use crate::formatter::HexdumpFormatter;
+use crate::utils::HexdumpFormatter;
 
 #[derive(PartialEq)]
 pub struct TextSegment {
     pub text: Vec<u8>,
 }
 
-pub trait ParseTextSegmentTrait {
-    fn parse(binary: &[u8], size: u32) -> Result<Self, &str>
-    where
-        Self: Sized;
-}
-
-impl ParseTextSegmentTrait for TextSegment {
-    fn parse(binary: &[u8], size: u32) -> Result<TextSegment, &str> {
+impl TextSegment {
+    pub fn parse(binary: &[u8], size: u32) -> Result<TextSegment, &str> {
         // get from 33th byte to 33th + size byte
         let b = match binary.get(32..32 + size as usize) {
             Some(b) => b,
@@ -51,7 +45,7 @@ impl fmt::Display for TextSegment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::disassembler::header::{Header, ParseHeaderTrait};
+    use crate::header::Header;
 
     #[test]
     fn test_parse_text_segment() {

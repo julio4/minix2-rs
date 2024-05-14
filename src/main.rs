@@ -2,12 +2,8 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
-mod disassembler;
-mod formatter;
-use disassembler::{
-    header::{Header, ParseHeaderTrait},
-    text_segment::{ParseTextSegmentTrait, TextSegment},
-};
+use minix2_rs::header::Header;
+use minix2_rs::text_segment::TextSegment;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::formatter::HexdumpFormatter;
+use crate::utils::HexdumpFormatter;
 
 #[derive(PartialEq)]
 pub struct Header {
@@ -20,14 +20,8 @@ pub struct Header {
     pub syms: u32,
 }
 
-pub trait ParseHeaderTrait {
-    fn parse(binary: &[u8]) -> Result<Self, &str>
-    where
-        Self: Sized;
-}
-
-impl ParseHeaderTrait for Header {
-    fn parse(binary: &[u8]) -> Result<Header, &str> {
+impl Header {
+    pub fn parse(binary: &[u8]) -> Result<Header, &str> {
         // Slice of 32 bytes with Error if less than 32 bytes
         let b = match binary.get(0..32) {
             Some(b) => b,
