@@ -5,6 +5,7 @@ pub mod parser;
 pub mod program;
 pub mod register;
 
-pub use error::ParseError;
-pub use instruction::IR;
-pub use parser::parse_instruction;
+pub use instruction::{Instruction, IR};
+pub use memory::Memory;
+pub use program::Program;
+pub use register::Register;

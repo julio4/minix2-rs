@@ -46,6 +46,24 @@ impl Register {
             _ => unreachable!(),
         }
     }
+
+    pub fn get_base(rm: u8) -> Option<Register> {
+        match rm {
+            0b000 | 0b001 | 0b111 => Some(Register::BX),
+            0b010 | 0b011 | 0b110 => Some(Register::BP),
+            0b100 => Some(Register::SI),
+            0b101 => Some(Register::DI),
+            _ => None,
+        }
+    }
+
+    pub fn get_index(rm: u8) -> Option<Register> {
+        match rm {
+            0b000 | 0b010 => Some(Register::SI),
+            0b001 | 0b011 => Some(Register::DI),
+            _ => None,
+        }
+    }
 }
 
 impl std::fmt::Display for Register {
@@ -69,5 +87,60 @@ impl std::fmt::Display for Register {
             Register::BH => "bh",
         };
         write!(f, "{}", reg)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_register_from() {
+        assert_eq!(Register::from(0b000, false), Register::AL);
+        assert_eq!(Register::from(0b001, false), Register::CL);
+        assert_eq!(Register::from(0b010, false), Register::DL);
+        assert_eq!(Register::from(0b011, false), Register::BL);
+        assert_eq!(Register::from(0b100, false), Register::AH);
+        assert_eq!(Register::from(0b101, false), Register::CH);
+        assert_eq!(Register::from(0b110, false), Register::DH);
+        assert_eq!(Register::from(0b111, false), Register::BH);
+        assert_eq!(Register::from(0b000, true), Register::AX);
+        assert_eq!(Register::from(0b001, true), Register::CX);
+        assert_eq!(Register::from(0b010, true), Register::DX);
+        assert_eq!(Register::from(0b011, true), Register::BX);
+        assert_eq!(Register::from(0b100, true), Register::SP);
+        assert_eq!(Register::from(0b101, true), Register::BP);
+        assert_eq!(Register::from(0b110, true), Register::SI);
+        assert_eq!(Register::from(0b111, true), Register::DI);
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid register number: 16")]
+    fn test_register_from_invalid() {
+        Register::from(0b10000, false);
+    }
+
+    #[test]
+    fn test_get_base() {
+        assert_eq!(Register::get_base(0b000), Some(Register::BX));
+        assert_eq!(Register::get_base(0b001), Some(Register::BX));
+        assert_eq!(Register::get_base(0b111), Some(Register::BX));
+        assert_eq!(Register::get_base(0b010), Some(Register::BP));
+        assert_eq!(Register::get_base(0b011), Some(Register::BP));
+        assert_eq!(Register::get_base(0b110), Some(Register::BP));
+        assert_eq!(Register::get_base(0b100), Some(Register::SI));
+        assert_eq!(Register::get_base(0b101), Some(Register::DI));
+        assert_eq!(Register::get_base(0b1111), None);
+    }
+
+    #[test]
+    fn test_get_index() {
+        assert_eq!(Register::get_index(0b000), Some(Register::SI));
+        assert_eq!(Register::get_index(0b010), Some(Register::SI));
+        assert_eq!(Register::get_index(0b001), Some(Register::DI));
+        assert_eq!(Register::get_index(0b011), Some(Register::DI));
+        assert_eq!(Register::get_index(0b100), None);
+        assert_eq!(Register::get_index(0b101), None);
+        assert_eq!(Register::get_index(0b1111), None);
     }
 }

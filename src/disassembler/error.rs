@@ -4,6 +4,7 @@ pub enum ParseError {
     CorruptedData,
     InvalidOpcode(u8),
     UnexpectedEOF,
+    InvalidModRM,
 }
 
 impl std::fmt::Display for ParseError {
@@ -13,6 +14,7 @@ impl std::fmt::Display for ParseError {
             ParseError::CorruptedData => write!(f, "Corrupted data"),
             ParseError::InvalidOpcode(opcode) => write!(f, "Invalid opcode: {:#04x}", opcode),
             ParseError::UnexpectedEOF => write!(f, "Unexpected end of file"),
+            ParseError::InvalidModRM => write!(f, "Invalid ModRM byte"),
         }
     }
 }

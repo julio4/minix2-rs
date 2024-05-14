@@ -2,9 +2,8 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
-use minix2_rs::disassembler::program::Program;
-use minix2_rs::header::Header;
-use minix2_rs::text_segment::TextSegment;
+use minix2_rs::disassembler::Program;
+use minix2_rs::{Header, TextSegment};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -20,9 +19,6 @@ fn main() {
         .bytes()
         .map(|b| b.expect("Error reading binary file"))
         .collect::<Vec<u8>>();
-
-    // Hexdump of binary
-    // println!("{:?}", formatter::HexdumpFormatter(&binary));
 
     // Parse header
     let header = match Header::parse(&binary) {
@@ -43,5 +39,13 @@ fn main() {
     };
 
     // Parse instructions from text segment
-    let _program = Program::from_text_segment(text_segment).unwrap();
+    let program = Program::from_text_segment(text_segment);
+
+    // Print program (same output as mmvm -d)
+    match program {
+        Ok(p) => println!("{}", p),
+        Err(e) => {
+            println!("Error parsing program: {}", e);
+        }
+    }
 }
