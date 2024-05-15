@@ -343,6 +343,11 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 1,
             ))
         }
+        // Call direct w/ segment
+        0b11101000 => {
+            let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
+            Ok((IR::Call { dest }, bytes_consumed))
+        }
         _ => Err(ParseError::InvalidOpcode(opcode)),
     };
 
@@ -409,6 +414,20 @@ fn parse_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), ParseEr
     Ok((
         Operand::LongDisplacement((bytes[1] as i8) as i16 + ip as i16 + 2),
         2,
+    ))
+}
+
+/// Parse the given three bytes as:
+/// 76543210  76543210 76543210
+/// --------  disp-low disp-high
+/// And return the operand (dest, bytes_consumed)
+fn parse_word_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), ParseError> {
+    if bytes.len() < 3 {
+        return Err(ParseError::UnexpectedEOF);
+    }
+    Ok((
+        Operand::LongDisplacement(i16::from_le_bytes([bytes[1], bytes[2]]) + ip as i16 + 3),
+        3,
     ))
 }
 
@@ -712,6 +731,22 @@ mod tests {
             Instruction::new(
                 IR::Push {
                     src: Operand::Register(Register::AX),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_call() {
+        // direct w/ segment
+        let bytes = [0xe8, 0x57, 0x02];
+        let expected_result = (
+            Instruction::new(
+                IR::Call {
+                    dest: Operand::LongDisplacement(0x0257 + 3),
                 },
                 bytes.to_vec(),
             ),

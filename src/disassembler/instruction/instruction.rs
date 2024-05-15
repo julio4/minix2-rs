@@ -37,6 +37,7 @@ pub enum IR {
     Jmp { dest: Operand },
     Test { dest: Operand, src: Operand },
     Push { src: Operand },
+    Call { dest: Operand },
 }
 
 impl std::fmt::Display for IR {
@@ -83,6 +84,7 @@ impl std::fmt::Display for IR {
             IR::Jmp { dest } => write!(f, "jmp {}", dest),
             IR::Test { dest, src } => write!(f, "test {}, {}", dest, src),
             IR::Push { src } => write!(f, "push {}", src),
+            IR::Call { dest } => write!(f, "call {}", dest),
         }
     }
 }
