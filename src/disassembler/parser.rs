@@ -333,6 +333,16 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
         }
+        // Push reg
+        0b01010000..=0b01010111 => {
+            let reg = Register::from(opcode & 0b00000111, true);
+            Ok((
+                IR::Push {
+                    src: Operand::Register(reg),
+                },
+                1,
+            ))
+        }
         _ => Err(ParseError::InvalidOpcode(opcode)),
     };
 
@@ -686,6 +696,22 @@ mod tests {
                 IR::Test {
                     dest: Operand::Register(Register::BL),
                     src: Operand::Immediate(0x01),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_push() {
+        // reg
+        let bytes = [0x50];
+        let expected_result = (
+            Instruction::new(
+                IR::Push {
+                    src: Operand::Register(Register::AX),
                 },
                 bytes.to_vec(),
             ),

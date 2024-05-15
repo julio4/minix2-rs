@@ -36,6 +36,7 @@ pub enum IR {
     Jcxz { dest: Operand },
     Jmp { dest: Operand },
     Test { dest: Operand, src: Operand },
+    Push { src: Operand },
 }
 
 impl std::fmt::Display for IR {
@@ -81,6 +82,7 @@ impl std::fmt::Display for IR {
             IR::Jcxz { dest } => write!(f, "jcxz {}", dest),
             IR::Jmp { dest } => write!(f, "jmp {}", dest),
             IR::Test { dest, src } => write!(f, "test {}, {}", dest, src),
+            IR::Push { src } => write!(f, "push {}", src),
         }
     }
 }
