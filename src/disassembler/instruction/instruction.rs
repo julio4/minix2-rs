@@ -39,6 +39,14 @@ pub enum IR {
     Push { src: Operand },
     Call { dest: Operand },
     Hlt,
+    Dec { dest: Operand },
+    Shl { dest: Operand, src: Operand },
+    Shr { dest: Operand, src: Operand },
+    Sar { dest: Operand, src: Operand },
+    Rol { dest: Operand, src: Operand },
+    Ror { dest: Operand, src: Operand },
+    Rcl { dest: Operand, src: Operand },
+    Rcr { dest: Operand, src: Operand },
 }
 
 impl std::fmt::Display for IR {
@@ -87,6 +95,14 @@ impl std::fmt::Display for IR {
             IR::Push { src } => write!(f, "push {}", src),
             IR::Call { dest } => write!(f, "call {}", dest),
             IR::Hlt => write!(f, "hlt"),
+            IR::Dec { dest } => write!(f, "dec {}", dest),
+            IR::Shl { dest, src } => write!(f, "shl {}, {}", dest, src),
+            IR::Shr { dest, src } => write!(f, "shr {}, {}", dest, src),
+            IR::Sar { dest, src } => write!(f, "sar {}, {}", dest, src),
+            IR::Rol { dest, src } => write!(f, "rol {}, {}", dest, src),
+            IR::Ror { dest, src } => write!(f, "ror {}, {}", dest, src),
+            IR::Rcl { dest, src } => write!(f, "rcl {}, {}", dest, src),
+            IR::Rcr { dest, src } => write!(f, "rcr {}, {}", dest, src),
         }
     }
 }
