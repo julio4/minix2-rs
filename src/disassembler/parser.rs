@@ -348,6 +348,8 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
             Ok((IR::Call { dest }, bytes_consumed))
         }
+        // HLT
+        0b11110100 => Ok((IR::Hlt, 1)),
         _ => Err(ParseError::InvalidOpcode(opcode)),
     };
 
@@ -752,6 +754,13 @@ mod tests {
             ),
             bytes.len(),
         );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_hlt() {
+        let bytes = [0xf4];
+        let expected_result = (Instruction::new(IR::Hlt, bytes.to_vec()), bytes.len());
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
