@@ -17,9 +17,13 @@ impl Program {
         let mut instructions = Vec::new();
         let mut text = segment.text.as_slice();
 
+        let mut ip = 0;
         while !text.is_empty() {
-            let (instruction, bytes_consumed) = parser::parse_instruction(text)?;
-            println!("{}", instruction);
+            let (instruction, bytes_consumed) = parser::parse_instruction(text, ip)?;
+            ip += bytes_consumed;
+            // DEBUG:
+            println!("{:04x}: {}", ip, instruction);
+
             instructions.push(instruction);
             text = &text[bytes_consumed..];
         }

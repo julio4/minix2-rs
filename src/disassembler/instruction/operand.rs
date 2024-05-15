@@ -6,6 +6,8 @@ pub enum Operand {
     Immediate(u8),
     LongImmediate(u16),
     Memory(Memory),
+    Displacement(i8),
+    LongDisplacement(i16),
 }
 
 impl Operand {
@@ -89,6 +91,8 @@ impl std::fmt::Display for Operand {
             Operand::Immediate(i) => write!(f, "{:02x}", i),
             Operand::LongImmediate(i) => write!(f, "{:04x}", i),
             Operand::Memory(mem) => write!(f, "{}", mem),
+            Operand::Displacement(d) => write!(f, "{:04}", d),
+            Operand::LongDisplacement(d) => write!(f, "{:04x}", d),
         }
     }
 }

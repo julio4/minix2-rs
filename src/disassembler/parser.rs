@@ -5,12 +5,13 @@ use crate::disassembler::{error::ParseError, instruction::Operand, Instruction, 
 /// # Arguments
 ///
 /// * `bytes` - The byte slice containing the instruction to parse.
+/// * `ip` - The instruction pointer (address) of the instruction.
 ///
 /// # Returns
 ///
 /// Returns a `Result` containing a tuple with the parsed `Instruction` and the number of bytes consumed.
 /// If parsing fails, a `ParseError` is returned.
-pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseError> {
+pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize), ParseError> {
     if bytes.is_empty() {
         return Err(ParseError::UnexpectedEOF);
     }
@@ -165,6 +166,106 @@ pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseErro
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
         }
+        // JE/JZ
+        0b01110100 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Je { dest }, bytes_consumed))
+        }
+        // JL/JNGE
+        0b01111100 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jl { dest }, bytes_consumed))
+        }
+        // JLE/JNG
+        0b01111110 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jle { dest }, bytes_consumed))
+        }
+        // JB/JNAE
+        0b01110010 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jb { dest }, bytes_consumed))
+        }
+        // JBE/JNA
+        0b01110110 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jbe { dest }, bytes_consumed))
+        }
+        // JP/JPE
+        0b01111010 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jp { dest }, bytes_consumed))
+        }
+        // JO
+        0b01110000 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jo { dest }, bytes_consumed))
+        }
+        // JS
+        0b01111000 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Js { dest }, bytes_consumed))
+        }
+        // JNE/JNZ
+        0b01110101 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jne { dest }, bytes_consumed))
+        }
+        // JNL/JGE
+        0b01111101 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnl { dest }, bytes_consumed))
+        }
+        // JNLE/JG
+        0b01111111 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnle { dest }, bytes_consumed))
+        }
+        // JNB/JAE
+        0b01110011 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnb { dest }, bytes_consumed))
+        }
+        // JNBE/JA
+        0b01110111 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnbe { dest }, bytes_consumed))
+        }
+        // JNP/JPO
+        0b01111011 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnp { dest }, bytes_consumed))
+        }
+        // JNO
+        0b01110001 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jno { dest }, bytes_consumed))
+        }
+        // JNS
+        0b01111001 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jns { dest }, bytes_consumed))
+        }
+        // LOOP
+        0b11100010 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Loop { dest }, bytes_consumed))
+        }
+        // LOOPZ/LOOPE
+        0b11100001 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Loopz { dest }, bytes_consumed))
+        }
+        // LOOPNZ/LOOPNE
+        0b11100000 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Loopnz { dest }, bytes_consumed))
+        }
+        // JCXZ
+        0b11100011 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jcxz { dest }, bytes_consumed))
+        }
         _ => Err(ParseError::InvalidOpcode(opcode)),
     };
 
@@ -179,7 +280,7 @@ pub fn parse_instruction(bytes: &[u8]) -> Result<(Instruction, usize), ParseErro
 /// Parse the given byte as:
 /// 76  543 210
 /// mod reg r/m
-/// And return the corresponding operands
+/// And return the operands (dest, src, bytes_consumed)
 /// Warning: This will consume FROM the given byte slice (be sure that bytes[0] is the modrm byte)
 fn parse_mod_reg_rm_bytes(bytes: &[u8], w: bool) -> Result<(Operand, Operand, usize), ParseError> {
     let mod_ = (bytes[0] & 0b11000000) >> 6;
@@ -194,6 +295,7 @@ fn parse_mod_reg_rm_bytes(bytes: &[u8], w: bool) -> Result<(Operand, Operand, us
 /// See `parse_mod_reg_rm_bytes`, but with first w byte:
 /// 76543210  76  543 210
 /// -------w  mod reg r/m
+/// And return the operands (dest, src, bytes_consumed)
 fn _parse_w_mod_reg_rm_bytes(bytes: &[u8]) -> Result<(Operand, Operand, usize), ParseError> {
     if bytes.len() < 2 {
         return Err(ParseError::UnexpectedEOF);
@@ -206,7 +308,7 @@ fn _parse_w_mod_reg_rm_bytes(bytes: &[u8]) -> Result<(Operand, Operand, usize), 
 /// Parse the given two bytes as:
 /// 76543210  76  543 210
 /// ------dw  mod reg r/m
-/// And return the corresponding operands
+/// And return the operands (dest, src, bytes_consumed)
 fn parse_dw_mod_reg_rm_bytes(bytes: &[u8]) -> Result<(Operand, Operand, usize), ParseError> {
     if bytes.len() < 2 {
         return Err(ParseError::UnexpectedEOF);
@@ -217,6 +319,20 @@ fn parse_dw_mod_reg_rm_bytes(bytes: &[u8]) -> Result<(Operand, Operand, usize), 
 
     let (dest, src) = if d { (reg, rm) } else { (rm, reg) };
     Ok((dest, src, bytes_consumed + 1))
+}
+
+/// Parse the given two bytes as:
+/// 76543210  76543210
+/// --------    disp
+/// And return the operand (dest, bytes_consumed)
+fn parse_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), ParseError> {
+    if bytes.len() < 2 {
+        return Err(ParseError::UnexpectedEOF);
+    }
+    Ok((
+        Operand::LongDisplacement((bytes[1] as i8) as i16 + ip as i16 + 2),
+        2,
+    ))
 }
 
 #[cfg(test)]
@@ -238,7 +354,7 @@ mod tests {
             ),
             2,
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
 
         // 16 bits
         let bytes = [0xbb, 0x00, 0x00];
@@ -252,7 +368,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -263,7 +379,7 @@ mod tests {
             Instruction::new(IR::Int { int_type: 3 }, bytes.to_vec()),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
 
         // INT 0x01
         let bytes = [0xcd, 0x01];
@@ -271,7 +387,7 @@ mod tests {
             Instruction::new(IR::Int { int_type: 1 }, bytes.to_vec()),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -288,7 +404,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
 
         // Imm with r/m
         let bytes = [0x83, 0xc3, 0x14];
@@ -302,7 +418,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -319,7 +435,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
 
         // Imm from r/m
         let bytes = [0x83, 0xeb, 0x14];
@@ -333,7 +449,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -349,7 +465,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -366,7 +482,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
 
         // Imm with r/m
         let bytes = [0x81, 0xfb, 0x14, 0x00];
@@ -380,7 +496,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -396,7 +512,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -412,7 +528,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -428,7 +544,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -444,7 +560,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -460,7 +576,7 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -476,7 +592,22 @@ mod tests {
             ),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes), Ok(expected_result));
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_jnb() {
+        let bytes = [0x73, 0x0f];
+        let expected_result = (
+            Instruction::new(
+                IR::Jnb {
+                    dest: Operand::LongDisplacement(0x0f + 2),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -484,7 +615,7 @@ mod tests {
         // Test parsing an invalid opcode
         let bytes = [0xFF];
         assert_eq!(
-            parse_instruction(&bytes),
+            parse_instruction(&bytes, 0),
             Err(ParseError::InvalidOpcode(0xFF))
         );
     }
@@ -492,6 +623,6 @@ mod tests {
     #[test]
     fn test_parse_instruction_unexpected_eof() {
         let bytes = [0b10110000];
-        assert_eq!(parse_instruction(&bytes), Err(ParseError::UnexpectedEOF));
+        assert_eq!(parse_instruction(&bytes, 0), Err(ParseError::UnexpectedEOF));
     }
 }
