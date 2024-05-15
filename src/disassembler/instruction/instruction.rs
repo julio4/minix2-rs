@@ -34,6 +34,8 @@ pub enum IR {
     Loopz { dest: Operand },
     Loopnz { dest: Operand },
     Jcxz { dest: Operand },
+    Jmp { dest: Operand },
+    Test { dest: Operand, src: Operand },
 }
 
 impl std::fmt::Display for IR {
@@ -77,6 +79,8 @@ impl std::fmt::Display for IR {
             IR::Loopz { dest } => write!(f, "loopz {}", dest),
             IR::Loopnz { dest } => write!(f, "loopnz {}", dest),
             IR::Jcxz { dest } => write!(f, "jcxz {}", dest),
+            IR::Jmp { dest } => write!(f, "jmp {}", dest),
+            IR::Test { dest, src } => write!(f, "test {}, {}", dest, src),
         }
     }
 }

@@ -266,6 +266,73 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
             Ok((IR::Jcxz { dest }, bytes_consumed))
         }
+        // JMP direct with short segment
+        0b11101011 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jmp { dest }, bytes_consumed))
+        }
+        0b11110110..=0b11110111 => {
+            // 1111011w opcode
+            // atleast 2 bytes
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+            let w = (opcode & 0b00000001) != 0;
+
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
+
+            // We need bits 5-2 from bytes 2
+
+            let bits = (bytes[1] & 0b00111000) >> 3;
+            match bits {
+                // NEG
+                0b011 => {
+                    unimplemented!()
+                }
+                // MUL
+                0b100 => {
+                    unimplemented!()
+                }
+                // IMUL
+                0b101 => {
+                    unimplemented!()
+                }
+                // DIV
+                0b110 => {
+                    unimplemented!()
+                }
+                // IDIV
+                0b111 => {
+                    unimplemented!()
+                }
+                // NOT
+                0b010 => {
+                    unimplemented!()
+                }
+                // TEST Imm and r/m
+                0b000 => {
+                    // next byte is data, so we should have consumed 1 bytes only
+                    // also, we should have atleast 3 bytes (4 if word data)
+                    if bytes_consumed != 1 || bytes.len() < (3 + w as usize) {
+                        return Err(ParseError::InvalidOpcode(bytes[1]));
+                    }
+                    let data = if w {
+                        Operand::LongImmediate(u16::from_le_bytes([bytes[2], bytes[3]]))
+                    } else {
+                        Operand::Immediate(u8::from_le_bytes([bytes[2]]).into())
+                    };
+
+                    Ok((
+                        IR::Test {
+                            dest: rm,
+                            src: data,
+                        },
+                        3 + w as usize,
+                    ))
+                }
+                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+            }
+        }
         _ => Err(ParseError::InvalidOpcode(opcode)),
     };
 
@@ -602,6 +669,23 @@ mod tests {
             Instruction::new(
                 IR::Jnb {
                     dest: Operand::LongDisplacement(0x0f + 2),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_test() {
+        // Imm and r/m
+        let bytes = [0xf6, 0xc3, 0x01];
+        let expected_result = (
+            Instruction::new(
+                IR::Test {
+                    dest: Operand::Register(Register::BL),
+                    src: Operand::Immediate(0x01),
                 },
                 bytes.to_vec(),
             ),
