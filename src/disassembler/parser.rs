@@ -1,4 +1,6 @@
-use crate::disassembler::{error::ParseError, instruction::Operand, Instruction, Register, IR, Displacement};
+use crate::disassembler::{
+    error::ParseError, instruction::Operand, Displacement, Instruction, Register, IR,
+};
 
 /// Parses the given byte slice and returns the parsed instruction along with the number of bytes consumed.
 ///
@@ -116,13 +118,15 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 return Err(ParseError::UnexpectedEOF);
             }
 
-            let data = if is_word_data {
-                Operand::LongImmediate(u16::from_le_bytes([bytes[2], bytes[3]]))
-            } else {
-                Operand::Immediate(u8::from_le_bytes([bytes[2]]).into())
-            };
-
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
+            let data = if is_word_data {
+                Operand::LongImmediate(u16::from_le_bytes([
+                    bytes[bytes_consumed + 1],
+                    bytes[bytes_consumed + 2],
+                ]))
+            } else {
+                Operand::Immediate(u8::from_le_bytes([bytes[bytes_consumed + 1]]).into())
+            };
 
             // We need bits 5-2 from bytes 2
             let bits = (bytes[1] & 0b00111000) >> 3;
@@ -387,6 +391,39 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0b11000011 | 0b11001011 => Ok((IR::Ret, 1)),
         // HLT
         0b11110100 => Ok((IR::Hlt, 1)),
+        // IN variable port
+        0b11101100..=0b11101100 => {
+            let w = (opcode & 0b00000001) != 0;
+            let dest = if w {
+                Operand::Register(Register::AX)
+            } else {
+                Operand::Register(Register::AL)
+            };
+
+            Ok((
+                IR::In {
+                    dest,
+                    src: Operand::Register(Register::DX),
+                },
+                1,
+            ))
+        }
+        // IN fixed port
+        0b11100100..=0b11100101 => {
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let w = (opcode & 0b00000001) != 0;
+            let dest = if w {
+                Operand::Register(Register::AX)
+            } else {
+                Operand::Register(Register::AL)
+            };
+            let port = Operand::Immediate(bytes[1]);
+
+            Ok((IR::In { dest, src: port }, 2))
+        }
         // DEC with reg
         0b01001000..=0b01001111 => {
             let reg = Register::from(opcode & 0b00000111, true);
@@ -719,12 +756,16 @@ mod tests {
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
 
         // Imm with r/m
-        let bytes = [0x81, 0xfb, 0x14, 0x00];
+        let bytes = [0x83, 0x7c, 0x02, 0x00];
         let expected_result = (
             Instruction::new(
                 IR::Cmp {
-                    dest: Operand::Register(Register::BX),
-                    src: Operand::LongImmediate(0x0014),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::SI),
+                        None,
+                        Some(Displacement::Long(0x2)),
+                    )),
+                    src: Operand::Immediate(0x00),
                 },
                 bytes.to_vec(),
             ),
@@ -1121,6 +1162,37 @@ mod tests {
             Instruction::new(
                 IR::Pop {
                     dest: Operand::Register(Register::BX),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_in() {
+        // variable port
+        let bytes = [0xec];
+        let expected_result = (
+            Instruction::new(
+                IR::In {
+                    dest: Operand::Register(Register::AL),
+                    src: Operand::Register(Register::DX),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // fixed port
+        let bytes = [0xe4, 0x01];
+        let expected_result = (
+            Instruction::new(
+                IR::In {
+                    dest: Operand::Register(Register::AL),
+                    src: Operand::Immediate(0x01),
                 },
                 bytes.to_vec(),
             ),

@@ -49,6 +49,7 @@ pub enum IR {
     Rcr { dest: Operand, src: Operand },
     Pop { dest: Operand },
     Ret,
+    In { dest: Operand, src: Operand },
 }
 
 impl std::fmt::Display for IR {
@@ -93,7 +94,7 @@ impl std::fmt::Display for IR {
             IR::Loopnz { dest } => write!(f, "loopnz {}", dest),
             IR::Jcxz { dest } => write!(f, "jcxz {}", dest),
             IR::Jmp { dest, short } => {
-                write!(f, "jmp {} {}", if *short { "short" } else { "" }, dest)
+                write!(f, "jmp {}{}", if *short { "short " } else { "" }, dest)
             }
             IR::Test { dest, src } => write!(f, "test {}, {}", dest, src),
             IR::Push { src } => write!(f, "push {}", src),
@@ -109,6 +110,7 @@ impl std::fmt::Display for IR {
             IR::Rcr { dest, src } => write!(f, "rcr {}, {}", dest, src),
             IR::Pop { dest } => write!(f, "pop {}", dest),
             IR::Ret => write!(f, "ret"),
+            IR::In { dest, src } => write!(f, "in {}, {}", dest, src),
         }
     }
 }

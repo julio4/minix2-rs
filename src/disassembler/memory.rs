@@ -46,7 +46,11 @@ impl std::fmt::Display for Memory {
 
         // If only disp, convert to [imm]
         return if base.is_empty() && index.is_empty() && self.disp.is_some() {
-            write!(f, "[{}]", self.disp.as_ref().unwrap())
+            let value = match self.disp.as_ref().unwrap() {
+                Displacement::Short(d) => *d as i16,
+                Displacement::Long(d) => *d,
+            };
+            write!(f, "[{:0>4x}]", value)
         } else {
             write!(f, "[{}{}{}]", base, index, {
                 match &self.disp {
@@ -113,9 +117,9 @@ mod tests {
         let memory = Memory {
             base: None,
             index: None,
-            disp: Some(Displacement::Long(0x1000)),
+            disp: Some(Displacement::Long(0x0010)),
         };
-        assert_eq!(format!("{}", memory), "[1000]");
+        assert_eq!(format!("{}", memory), "[0010]");
     }
 
     #[test]
