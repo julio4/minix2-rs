@@ -90,7 +90,9 @@ impl std::fmt::Display for IR {
             IR::Loopz { dest } => write!(f, "loopz {}", dest),
             IR::Loopnz { dest } => write!(f, "loopnz {}", dest),
             IR::Jcxz { dest } => write!(f, "jcxz {}", dest),
-            IR::Jmp { dest, short } => write!(f, "jmp {} {}", if *short { "short" } else { "" }, dest),
+            IR::Jmp { dest, short } => {
+                write!(f, "jmp {} {}", if *short { "short" } else { "" }, dest)
+            }
             IR::Test { dest, src } => write!(f, "test {}, {}", dest, src),
             IR::Push { src } => write!(f, "push {}", src),
             IR::Call { dest } => write!(f, "call {}", dest),
@@ -123,7 +125,7 @@ impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}\t    {}",
+            "{:<14}{}",
             self.raw
                 .iter()
                 .map(|b| format!("{:02x}", b))

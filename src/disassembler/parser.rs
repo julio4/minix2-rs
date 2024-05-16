@@ -1,4 +1,4 @@
-use crate::disassembler::{error::ParseError, instruction::Operand, Instruction, Register, IR};
+use crate::disassembler::{error::ParseError, instruction::Operand, Instruction, Register, IR, Displacement};
 
 /// Parses the given byte slice and returns the parsed instruction along with the number of bytes consumed.
 ///
@@ -123,10 +123,6 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             };
 
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
-            // next byte is the immediate data, so we should have consumed 1 bytes only
-            if bytes_consumed != 1 {
-                return Err(ParseError::InvalidOpcode(bytes[1]));
-            }
 
             // We need bits 5-2 from bytes 2
             let bits = (bytes[1] & 0b00111000) >> 3;
@@ -137,7 +133,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                         dest: rm,
                         src: data,
                     },
-                    total_consumed,
+                    total_consumed + bytes_consumed - 1,
                 )),
                 // ADC Imm to r/m
                 0b010 => {
@@ -149,7 +145,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                         dest: rm,
                         src: data,
                     },
-                    total_consumed,
+                    total_consumed + bytes_consumed - 1,
                 )),
                 // SSB Imm from r/m
                 0b011 => {
@@ -161,7 +157,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                         dest: rm,
                         src: data,
                     },
-                    total_consumed,
+                    total_consumed + bytes_consumed - 1,
                 )),
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
@@ -500,7 +496,7 @@ fn parse_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), ParseEr
         return Err(ParseError::UnexpectedEOF);
     }
     Ok((
-        Operand::LongDisplacement((bytes[1] as i8) as i16 + ip as i16 + 2),
+        Operand::Displacement(Displacement::Long((bytes[1] as i8) as i16 + ip as i16 + 2)),
         2,
     ))
 }
@@ -514,7 +510,9 @@ fn parse_word_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), Pa
         return Err(ParseError::UnexpectedEOF);
     }
     Ok((
-        Operand::LongDisplacement(i16::from_le_bytes([bytes[1], bytes[2]]) + ip as i16 + 3),
+        Operand::Displacement(Displacement::Long(
+            i16::from_le_bytes([bytes[1], bytes[2]]) + ip as i16 + 3,
+        )),
         3,
     ))
 }
@@ -581,7 +579,11 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Add {
-                    dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        Some(Register::SI),
+                        None,
+                    )),
                     src: Operand::Register(Register::AL),
                 },
                 bytes.to_vec(),
@@ -612,7 +614,11 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Sub {
-                    dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        Some(Register::SI),
+                        None,
+                    )),
                     src: Operand::Register(Register::AL),
                 },
                 bytes.to_vec(),
@@ -642,7 +648,11 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Ssb {
-                    dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        Some(Register::SI),
+                        None,
+                    )),
                     src: Operand::Register(Register::AL),
                 },
                 bytes.to_vec(),
@@ -659,7 +669,11 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Cmp {
-                    dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        Some(Register::SI),
+                        None,
+                    )),
                     src: Operand::Register(Register::AL),
                 },
                 bytes.to_vec(),
@@ -689,7 +703,11 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::And {
-                    dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        Some(Register::SI),
+                        None,
+                    )),
                     src: Operand::Register(Register::AL),
                 },
                 bytes.to_vec(),
@@ -705,7 +723,11 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Or {
-                    dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        Some(Register::SI),
+                        None,
+                    )),
                     src: Operand::Register(Register::AL),
                 },
                 bytes.to_vec(),
@@ -721,7 +743,11 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Xor {
-                    dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), 0)),
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        Some(Register::SI),
+                        None,
+                    )),
                     src: Operand::Register(Register::AL),
                 },
                 bytes.to_vec(),
@@ -738,7 +764,11 @@ mod tests {
             Instruction::new(
                 IR::Lea {
                     dest: Operand::Register(Register::DX),
-                    src: Operand::Memory(Memory::new(Some(Register::BX), None, 2)),
+                    src: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        None,
+                        Some(Displacement::Long(0x2)),
+                    )),
                 },
                 bytes.to_vec(),
             ),
@@ -754,7 +784,11 @@ mod tests {
             Instruction::new(
                 IR::Lds {
                     dest: Operand::Register(Register::DX),
-                    src: Operand::Memory(Memory::new(Some(Register::BX), None, 2)),
+                    src: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        None,
+                        Some(Displacement::Long(0x2)),
+                    )),
                 },
                 bytes.to_vec(),
             ),
@@ -770,7 +804,11 @@ mod tests {
             Instruction::new(
                 IR::Les {
                     dest: Operand::Register(Register::DX),
-                    src: Operand::Memory(Memory::new(Some(Register::BX), None, 2)),
+                    src: Operand::Memory(Memory::new(
+                        Some(Register::BX),
+                        None,
+                        Some(Displacement::Long(0x2)),
+                    )),
                 },
                 bytes.to_vec(),
             ),
@@ -786,8 +824,8 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Jmp {
-                    dest: Operand::LongDisplacement(0x0f + 2),
-                    short: true
+                    dest: Operand::Displacement(Displacement::Long(0x0f + 2)),
+                    short: true,
                 },
                 bytes.to_vec(),
             ),
@@ -799,8 +837,8 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Jmp {
-                    dest: Operand::LongDisplacement(0x0257 + 3),
-                    short: false
+                    dest: Operand::Displacement(Displacement::Long(0x0257 + 3)),
+                    short: false,
                 },
                 bytes.to_vec(),
             ),
@@ -815,7 +853,7 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Jnb {
-                    dest: Operand::LongDisplacement(0x0f + 2),
+                    dest: Operand::Displacement(Displacement::Long(0x0f + 2)),
                 },
                 bytes.to_vec(),
             ),
@@ -855,6 +893,23 @@ mod tests {
             bytes.len(),
         );
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // r/m
+        let bytes = [0xff, 0x76, 0x04];
+        let expected_result = (
+            Instruction::new(
+                IR::Push {
+                    src: Operand::Memory(Memory::new(
+                        Some(Register::BP),
+                        None,
+                        Some(Displacement::Long(0x4)),
+                    )),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -864,7 +919,21 @@ mod tests {
         let expected_result = (
             Instruction::new(
                 IR::Call {
-                    dest: Operand::LongDisplacement(0x0257 + 3),
+                    dest: Operand::Displacement(Displacement::Long(0x0257 + 3)),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // indirect w/ segment
+        // intersegment
+        let bytes = [0xff, 0xd3];
+        let expected_result = (
+            Instruction::new(
+                IR::Call {
+                    dest: Operand::Register(Register::BX),
                 },
                 bytes.to_vec(),
             ),

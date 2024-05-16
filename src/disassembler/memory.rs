@@ -1,38 +1,26 @@
-use super::register::Register;
+use crate::disassembler::{Displacement, Register};
 
 #[derive(Debug, PartialEq)]
 pub struct Memory {
     pub base: Option<Register>,
     pub index: Option<Register>,
-    pub disp_low: u8,
-    pub disp_high: Option<u8>,
+    pub disp: Option<Displacement>,
 }
 
 impl Memory {
-    pub fn new(base: Option<Register>, index: Option<Register>, disp_low: u8) -> Self {
-        Memory {
-            base,
-            index,
-            disp_low,
-            disp_high: None,
-        }
-    }
-
-    pub fn new_with_word_disp(base: Option<Register>, index: Option<Register>, disp: u16) -> Self {
-        Memory {
-            base,
-            index,
-            disp_low: disp as u8,
-            disp_high: Some((disp >> 8) as u8),
-        }
+    pub fn new(
+        base: Option<Register>,
+        index: Option<Register>,
+        disp: Option<Displacement>,
+    ) -> Self {
+        Memory { base, index, disp }
     }
 
     pub fn from_imm(imm: u8) -> Self {
         Memory {
             base: None,
             index: None,
-            disp_low: imm,
-            disp_high: None,
+            disp: Some(Displacement::Short(imm as i8)),
         }
     }
 
@@ -40,8 +28,7 @@ impl Memory {
         Memory {
             base: None,
             index: None,
-            disp_low: imm as u8,
-            disp_high: Some((imm >> 8) as u8),
+            disp: Some(Displacement::Long(imm as i16)),
         }
     }
 }
@@ -56,19 +43,21 @@ impl std::fmt::Display for Memory {
             Some(i) => format!("+{}", i),
             None => "".to_string(),
         };
-        let disp = match self.disp_high {
-            Some(d) => (d as u16) << 8 | (self.disp_low as u16),
-            None => self.disp_low as u16,
-        };
+
         // If only disp, convert to [imm]
-        return if base.is_empty() && index.is_empty() && disp != 0 {
-            write!(f, "[{:04x}]", disp)
+        return if base.is_empty() && index.is_empty() && self.disp.is_some() {
+            write!(f, "[{}]", self.disp.as_ref().unwrap())
         } else {
             write!(f, "[{}{}{}]", base, index, {
-                if disp != 0 {
-                    format!("+{:x}", disp)
-                } else {
-                    "".to_string()
+                match &self.disp {
+                    Some(d) => {
+                        if d.is_neg() {
+                            format!("{}", d)
+                        } else {
+                            format!("+{}", d)
+                        }
+                    }
+                    None => "".to_string(),
                 }
             })
         };
@@ -82,10 +71,9 @@ mod tests {
     #[test]
     fn test_memory_display_no_displacement() {
         let memory = Memory {
-            disp_low: 0,
             base: Some(Register::BX),
             index: None,
-            disp_high: None,
+            disp: None,
         };
         assert_eq!(format!("{}", memory), "[bx]");
     }
@@ -93,10 +81,9 @@ mod tests {
     #[test]
     fn test_memory_display_with_8bits_displacement() {
         let memory = Memory {
-            disp_low: 0x5,
             base: Some(Register::BX),
             index: None,
-            disp_high: None,
+            disp: Some(Displacement::Short(0x5)),
         };
         assert_eq!(format!("{}", memory), "[bx+5]");
     }
@@ -104,10 +91,9 @@ mod tests {
     #[test]
     fn test_memory_display_with_16bits_displacement() {
         let memory = Memory {
-            disp_low: 0x00,
             base: Some(Register::BX),
             index: None,
-            disp_high: Some(0x10),
+            disp: Some(Displacement::Long(0x1000)),
         };
         assert_eq!(format!("{}", memory), "[bx+1000]");
     }
@@ -115,10 +101,9 @@ mod tests {
     #[test]
     fn test_memory_display_with_base_index_displacement() {
         let memory = Memory {
-            disp_low: 0x8,
             base: Some(Register::BX),
             index: Some(Register::SI),
-            disp_high: None,
+            disp: Some(Displacement::Short(0x8)),
         };
         assert_eq!(format!("{}", memory), "[bx+si+8]");
     }
@@ -126,11 +111,20 @@ mod tests {
     #[test]
     fn test_memory_display_with_displacement_as_ea() {
         let memory = Memory {
-            disp_low: 0,
             base: None,
             index: None,
-            disp_high: Some(0x10),
+            disp: Some(Displacement::Long(0x1000)),
         };
         assert_eq!(format!("{}", memory), "[1000]");
+    }
+
+    #[test]
+    fn test_memory_display_with_signed_displacement() {
+        let memory = Memory {
+            base: Some(Register::BX),
+            index: Some(Register::SI),
+            disp: Some(Displacement::Long((0x89u8 as i8) as i16)),
+        };
+        assert_eq!(format!("{}", memory), "[bx+si-77]");
     }
 }
