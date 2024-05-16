@@ -26,6 +26,24 @@ impl Memory {
             disp_high: Some((disp >> 8) as u8),
         }
     }
+
+    pub fn from_imm(imm: u8) -> Self {
+        Memory {
+            base: None,
+            index: None,
+            disp_low: imm,
+            disp_high: None,
+        }
+    }
+
+    pub fn from_word_imm(imm: u16) -> Self {
+        Memory {
+            base: None,
+            index: None,
+            disp_low: imm as u8,
+            disp_high: Some((imm >> 8) as u8),
+        }
+    }
 }
 
 impl std::fmt::Display for Memory {
@@ -42,13 +60,13 @@ impl std::fmt::Display for Memory {
             Some(d) => (d as u16) << 8 | (self.disp_low as u16),
             None => self.disp_low as u16,
         };
-        // If only disp, convert to EA
+        // If only disp, convert to [imm]
         return if base.is_empty() && index.is_empty() && disp != 0 {
-            write!(f, "0x{:04x}", disp)
+            write!(f, "[{:04x}]", disp)
         } else {
             write!(f, "[{}{}{}]", base, index, {
                 if disp != 0 {
-                    format!("+{}", disp)
+                    format!("+{:x}", disp)
                 } else {
                     "".to_string()
                 }
@@ -75,7 +93,7 @@ mod tests {
     #[test]
     fn test_memory_display_with_8bits_displacement() {
         let memory = Memory {
-            disp_low: 5,
+            disp_low: 0x5,
             base: Some(Register::BX),
             index: None,
             disp_high: None,
@@ -91,13 +109,13 @@ mod tests {
             index: None,
             disp_high: Some(0x10),
         };
-        assert_eq!(format!("{}", memory), "[bx+4096]");
+        assert_eq!(format!("{}", memory), "[bx+1000]");
     }
 
     #[test]
     fn test_memory_display_with_base_index_displacement() {
         let memory = Memory {
-            disp_low: 8,
+            disp_low: 0x8,
             base: Some(Register::BX),
             index: Some(Register::SI),
             disp_high: None,
@@ -113,6 +131,6 @@ mod tests {
             index: None,
             disp_high: Some(0x10),
         };
-        assert_eq!(format!("{}", memory), "0x1000");
+        assert_eq!(format!("{}", memory), "[1000]");
     }
 }

@@ -34,7 +34,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let imm = if w {
                 Operand::LongImmediate(u16::from_le_bytes([bytes[1], bytes[2]]))
             } else {
-                Operand::Immediate(u8::from_le_bytes([bytes[1]]).into())
+                Operand::Immediate(bytes[1])
             };
 
             Ok((
@@ -269,12 +269,12 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         // JMP direct with short segment
         0b11101011 => {
             let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jmp { dest }, bytes_consumed))
+            Ok((IR::Jmp { dest, short: true }, bytes_consumed))
         }
         // JMP direct with segment
         0b11101001 => {
             let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
-            Ok((IR::Jmp { dest }, bytes_consumed))
+            Ok((IR::Jmp { dest, short: false }, bytes_consumed))
         }
         0b11110110..=0b11110111 => {
             // 1111011w opcode
@@ -541,12 +541,12 @@ mod tests {
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
 
         // 16 bits
-        let bytes = [0xbb, 0x00, 0x00];
+        let bytes = [0xbb, 0xFF, 0x00];
         let expected_result = (
             Instruction::new(
                 IR::Mov {
                     dest: Operand::Register(Register::BX),
-                    src: Operand::LongImmediate(0x0000),
+                    src: Operand::LongImmediate(0x00FF),
                 },
                 bytes.to_vec(),
             ),
@@ -787,6 +787,7 @@ mod tests {
             Instruction::new(
                 IR::Jmp {
                     dest: Operand::LongDisplacement(0x0f + 2),
+                    short: true
                 },
                 bytes.to_vec(),
             ),
@@ -799,6 +800,7 @@ mod tests {
             Instruction::new(
                 IR::Jmp {
                     dest: Operand::LongDisplacement(0x0257 + 3),
+                    short: false
                 },
                 bytes.to_vec(),
             ),
@@ -1009,10 +1011,10 @@ mod tests {
     #[test]
     fn test_parse_instruction_invalid_opcode() {
         // Test parsing an invalid opcode
-        let bytes = [0xFF];
+        let bytes = [0xFA];
         assert_eq!(
             parse_instruction(&bytes, 0),
-            Err(ParseError::InvalidOpcode(0xFF))
+            Err(ParseError::InvalidOpcode(0xFA))
         );
     }
 

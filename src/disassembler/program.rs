@@ -20,9 +20,9 @@ impl Program {
         let mut ip = 0;
         while !text.is_empty() {
             let (instruction, bytes_consumed) = parser::parse_instruction(text, ip)?;
-            ip += bytes_consumed;
             // DEBUG:
             println!("{:04x}: {}", ip, instruction);
+            ip += bytes_consumed;
 
             instructions.push(instruction);
             text = &text[bytes_consumed..];
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn test_from_text_segment() {
         let text_segment = TextSegment {
-            text: vec![0xbb, 0x00, 0x00],
+            text: vec![0xbb, 0xFF, 0x00],
         };
         let program = Program::from_text_segment(text_segment).unwrap();
         assert_eq!(program.instructions.len(), 1);
@@ -60,9 +60,9 @@ mod tests {
             Instruction::new(
                 IR::Mov {
                     dest: Operand::Register(Register::BX),
-                    src: Operand::LongImmediate(0x0000),
+                    src: Operand::LongImmediate(0x00FF)
                 },
-                vec![0xbb, 0x00, 0x00]
+                vec![0xbb, 0xFF, 0x00]
             )
         );
     }
