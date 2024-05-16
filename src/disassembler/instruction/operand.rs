@@ -7,7 +7,6 @@ pub enum Operand {
     LongImmediate(u16),
     Memory(Memory),
     Displacement(Displacement),
-    // LongDisplacement(i16),
 }
 
 impl Operand {
