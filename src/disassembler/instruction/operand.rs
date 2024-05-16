@@ -1,4 +1,4 @@
-use crate::disassembler::{error::ParseError, Memory, Register};
+use crate::disassembler::{error::ParseError, Displacement, Memory, Register};
 
 #[derive(Debug, PartialEq)]
 pub enum Operand {
@@ -6,8 +6,8 @@ pub enum Operand {
     Immediate(u8),
     LongImmediate(u16),
     Memory(Memory),
-    Displacement(i8),
-    LongDisplacement(i16),
+    Displacement(Displacement),
+    // LongDisplacement(i16),
 }
 
 impl Operand {
@@ -32,8 +32,9 @@ impl Operand {
                         Operand::Memory(Memory {
                             base: None,
                             index: None,
-                            disp_low: bytes[1],
-                            disp_high: Some(bytes[2]),
+                            disp: Some(Displacement::Long(i16::from_le_bytes([
+                                bytes[1], bytes[2],
+                            ]))),
                         }),
                         2,
                     ))
@@ -42,8 +43,7 @@ impl Operand {
                         Operand::Memory(Memory {
                             base: Register::get_base(rm),
                             index: Register::get_index(rm),
-                            disp_low: 0,
-                            disp_high: None,
+                            disp: None,
                         }),
                         0,
                     ))
@@ -54,12 +54,13 @@ impl Operand {
                 if bytes.len() < 2 {
                     return Err(ParseError::UnexpectedEOF);
                 }
+                // sign extended to i16
+                let disp = Displacement::Long(bytes[1] as i8 as i16);
                 return Ok((
                     Operand::Memory(Memory {
                         base: Register::get_base(rm),
                         index: Register::get_index(rm),
-                        disp_low: bytes[1],
-                        disp_high: None,
+                        disp: Some(disp),
                     }),
                     1,
                 ));
@@ -73,8 +74,7 @@ impl Operand {
                     Operand::Memory(Memory {
                         base: Register::get_base(rm),
                         index: Register::get_index(rm),
-                        disp_low: bytes[1],
-                        disp_high: Some(bytes[2]),
+                        disp: Some(Displacement::Long(i16::from_le_bytes([bytes[1], bytes[2]]))),
                     }),
                     2,
                 ));
@@ -91,8 +91,10 @@ impl std::fmt::Display for Operand {
             Operand::Immediate(i) => write!(f, "{:x}", i),
             Operand::LongImmediate(i) => write!(f, "{:04x}", i),
             Operand::Memory(mem) => write!(f, "{}", mem),
-            Operand::Displacement(d) => write!(f, "{:04}", d),
-            Operand::LongDisplacement(d) => write!(f, "{:04x}", d),
+            Operand::Displacement(d) => match d {
+                Displacement::Short(d) => write!(f, "{:02x}", d),
+                Displacement::Long(d) => write!(f, "{:04x}", d),
+            },
         }
     }
 }

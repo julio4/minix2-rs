@@ -47,6 +47,8 @@ pub enum IR {
     Ror { dest: Operand, src: Operand },
     Rcl { dest: Operand, src: Operand },
     Rcr { dest: Operand, src: Operand },
+    Pop { dest: Operand },
+    Ret,
 }
 
 impl std::fmt::Display for IR {
@@ -105,6 +107,8 @@ impl std::fmt::Display for IR {
             IR::Ror { dest, src } => write!(f, "ror {}, {}", dest, src),
             IR::Rcl { dest, src } => write!(f, "rcl {}, {}", dest, src),
             IR::Rcr { dest, src } => write!(f, "rcr {}, {}", dest, src),
+            IR::Pop { dest } => write!(f, "pop {}", dest),
+            IR::Ret => write!(f, "ret"),
         }
     }
 }

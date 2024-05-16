@@ -334,7 +334,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
         }
-        // Push reg
+        // PUSH reg
         0b01010000..=0b01010111 => {
             let reg = Register::from(opcode & 0b00000111, true);
             Ok((
@@ -344,11 +344,47 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 1,
             ))
         }
-        // Call direct w/ segment
+        // CALL direct w/ segment
         0b11101000 => {
             let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
             Ok((IR::Call { dest }, bytes_consumed))
         }
+        0b11111111 => {
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            let bits = (bytes[1] & 0b00111000) >> 3;
+            match bits {
+                // CALL indirect w/ segment
+                // CALL intersegment
+                0b010 | 0b011 => Ok((IR::Call { dest: rm }, bytes_consumed + 1)),
+                // JMP indirect w/ segment
+                0b100 => {
+                    unimplemented!()
+                }
+                // JMP intersegment
+                0b101 => {
+                    unimplemented!()
+                }
+                // PUSH r/m
+                0b110 => Ok((IR::Push { src: rm }, bytes_consumed + 1)),
+                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+            }
+        }
+        // POP register
+        0b01011000..=0b01011111 => {
+            let reg = Register::from(opcode & 0b00000111, true);
+            Ok((
+                IR::Pop {
+                    dest: Operand::Register(reg),
+                },
+                1,
+            ))
+        }
+        // RET segment / intersegment
+        0b11000011 | 0b11001011 => Ok((IR::Ret, 1)),
         // HLT
         0b11110100 => Ok((IR::Hlt, 1)),
         // DEC with reg
@@ -1069,6 +1105,22 @@ mod tests {
                 IR::Rcr {
                     dest: Operand::Register(Register::BX),
                     src: Operand::Immediate(1),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_pop() {
+        // reg
+        let bytes = [0x5b];
+        let expected_result = (
+            Instruction::new(
+                IR::Pop {
+                    dest: Operand::Register(Register::BX),
                 },
                 bytes.to_vec(),
             ),
