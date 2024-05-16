@@ -291,9 +291,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let bits = (bytes[1] & 0b00111000) >> 3;
             match bits {
                 // NEG
-                0b011 => {
-                    unimplemented!()
-                }
+                0b011 => Ok((IR::Neg { dest: rm }, bytes_consumed + 1)),
                 // MUL
                 0b100 => {
                     unimplemented!()
@@ -1193,6 +1191,21 @@ mod tests {
                 IR::In {
                     dest: Operand::Register(Register::AL),
                     src: Operand::Immediate(0x01),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_neg() {
+        let bytes = [0xf7, 0xda];
+        let expected_result = (
+            Instruction::new(
+                IR::Neg {
+                    dest: Operand::Register(Register::DX),
                 },
                 bytes.to_vec(),
             ),

@@ -42,10 +42,5 @@ fn main() {
     let program = Program::from_text_segment(text_segment);
 
     // Print program (same output as mmvm -d)
-    match program {
-        Ok(p) => println!("{}", p),
-        Err(e) => {
-            println!("Error parsing program: {}", e);
-        }
-    }
+    print!("{}", program);
 }

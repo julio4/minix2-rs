@@ -50,6 +50,8 @@ pub enum IR {
     Pop { dest: Operand },
     Ret,
     In { dest: Operand, src: Operand },
+    Neg { dest: Operand },
+    Undefined,
 }
 
 impl std::fmt::Display for IR {
@@ -111,6 +113,8 @@ impl std::fmt::Display for IR {
             IR::Pop { dest } => write!(f, "pop {}", dest),
             IR::Ret => write!(f, "ret"),
             IR::In { dest, src } => write!(f, "in {}, {}", dest, src),
+            IR::Neg { dest } => write!(f, "neg {}", dest),
+            IR::Undefined => write!(f, "(undefined)"),
         }
     }
 }

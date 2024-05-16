@@ -1,5 +1,5 @@
 use crate::{
-    disassembler::{error::ParseError, parser, Instruction},
+    disassembler::{error::ParseError, parser, Instruction, IR},
     text_segment::TextSegment,
 };
 
@@ -13,13 +13,22 @@ impl Program {
         Program { instructions }
     }
 
-    pub fn from_text_segment(segment: TextSegment) -> Result<Program, ParseError> {
+    pub fn from_text_segment(segment: TextSegment) -> Program {
         let mut instructions = Vec::new();
         let mut text = segment.text.as_slice();
 
         let mut ip = 0;
         while !text.is_empty() {
-            let (instruction, bytes_consumed) = parser::parse_instruction(text, ip)?;
+            let (instruction, bytes_consumed) = match parser::parse_instruction(text, ip) {
+                Ok((instruction, bytes_consumed)) => (instruction, bytes_consumed),
+                Err(ParseError::UnexpectedEOF) => {
+                    (Instruction::new(IR::Undefined, text.to_vec()), text.len())
+                }
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    break;
+                }
+            };
             // DEBUG:
             println!("{:04x}: {}", ip, instruction);
             ip += bytes_consumed;
@@ -28,7 +37,7 @@ impl Program {
             text = &text[bytes_consumed..];
         }
 
-        Ok(Program::new(instructions))
+        Program::new(instructions)
     }
 }
 
@@ -53,7 +62,7 @@ mod tests {
         let text_segment = TextSegment {
             text: vec![0xbb, 0xFF, 0x00],
         };
-        let program = Program::from_text_segment(text_segment).unwrap();
+        let program = Program::from_text_segment(text_segment);
         assert_eq!(program.instructions.len(), 1);
         assert_eq!(
             program.instructions[0],
