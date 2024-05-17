@@ -19,97 +19,154 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
     }
 
     let opcode = bytes[0];
-    let ir = match opcode {
-        // MOV r/m, r/e
-        0b10001000..=0b10001011 => {
-            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
-            Ok((IR::Mov { dest, src }, bytes_consumed))
-        }
-        // MOV imm, reg
-        0b10110000..=0b10111111 => {
-            let w = (opcode & 0b00001000) != 0;
-            if bytes.len() < (2 + w as usize) {
-                return Err(ParseError::UnexpectedEOF);
-            }
-
-            let reg = Operand::Register(Register::from(opcode & 0b00000111, w));
-            let imm = if w {
-                Operand::LongImmediate(u16::from_le_bytes([bytes[1], bytes[2]]))
-            } else {
-                Operand::Immediate(bytes[1])
-            };
-
-            Ok((
-                IR::Mov {
-                    dest: reg,
-                    src: imm,
-                },
-                2 + w as usize,
-            ))
-        }
-        // INT
-        0b11001100..=0b11001101 => {
-            let specified = (opcode & 0b00000001) != 0;
-            if bytes.len() < (1 + specified as usize) {
-                return Err(ParseError::UnexpectedEOF);
-            }
-
-            let int_type = if specified { bytes[1] } else { 3 };
-
-            Ok((IR::Int { int_type }, 1 + specified as usize))
-        }
+    let ir: Result<(IR, usize), ParseError> = match opcode {
         // ADD r/m, r/e
-        0b00000000..=0b00000011 => {
+        0x0..=0x3 => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
             Ok((IR::Add { dest, src }, bytes_consumed))
         }
-        // SUB r/m, r/e
-        0b00101000..=0b00101011 => {
-            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
-            Ok((IR::Sub { dest, src }, bytes_consumed))
-        }
-        // SSB r/m, r/e
-        0b00011000..=0b00011011 => {
-            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
-            Ok((IR::Ssb { dest, src }, bytes_consumed))
-        }
-        // CMP r/m, r/e
-        0b00111000..=0b00111011 => {
-            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
-            Ok((IR::Cmp { dest, src }, bytes_consumed))
-        }
-        // AND r/m, r/e
-        0b00100000..=0b00100011 => {
-            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
-            Ok((IR::And { dest, src }, bytes_consumed))
-        }
         // OR r/m, r/e
-        0b00001000..=0b00001011 => {
+        0x8..=0xB => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
             Ok((IR::Or { dest, src }, bytes_consumed))
         }
+        // SSB r/m, r/e
+        0x18..=0x1b => {
+            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
+            Ok((IR::Ssb { dest, src }, bytes_consumed))
+        }
+        // AND r/m, r/e
+        0x20..=0x23 => {
+            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
+            Ok((IR::And { dest, src }, bytes_consumed))
+        }
+        // SUB r/m, r/e
+        0x28..=0x2b => {
+            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
+            Ok((IR::Sub { dest, src }, bytes_consumed))
+        }
         // XOR r/m, r/e
-        0b00110000..=0b00110011 => {
+        0x30..=0x33 => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
             Ok((IR::Xor { dest, src }, bytes_consumed))
         }
-        // LEA
-        0b10001101 => {
-            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
-            Ok((IR::Lea { dest, src }, bytes_consumed + 1))
+        // CMP r/m, r/e
+        0x38..=0x3b => {
+            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
+            Ok((IR::Cmp { dest, src }, bytes_consumed))
         }
-        // LDS
-        0b11000101 => {
-            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
-            Ok((IR::Lds { dest, src }, bytes_consumed + 1))
+        // DEC with reg
+        0x48..=0x4F => {
+            let reg = Register::from(opcode & 0b00000111, true);
+            Ok((
+                IR::Dec {
+                    dest: Operand::Register(reg),
+                },
+                1,
+            ))
         }
-        // LES
-        0b11000100 => {
-            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
-            Ok((IR::Les { dest, src }, bytes_consumed + 1))
+        // PUSH reg
+        0x50..=0x57 => {
+            let reg = Register::from(opcode & 0b00000111, true);
+            Ok((
+                IR::Push {
+                    src: Operand::Register(reg),
+                },
+                1,
+            ))
+        }
+        // POP register
+        0x58..=0x5F => {
+            let reg = Register::from(opcode & 0b00000111, true);
+            Ok((
+                IR::Pop {
+                    dest: Operand::Register(reg),
+                },
+                1,
+            ))
+        }
+        // JO
+        0x70 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jo { dest }, bytes_consumed))
+        }
+        // JNO
+        0x71 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jno { dest }, bytes_consumed))
+        }
+        // JB/JNAE
+        0x72 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jb { dest }, bytes_consumed))
+        }
+        // JNB/JAE
+        0x73 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnb { dest }, bytes_consumed))
+        }
+        // JE/JZ
+        0x74 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Je { dest }, bytes_consumed))
+        }
+        // JNE/JNZ
+        0x75 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jne { dest }, bytes_consumed))
+        }
+        // JBE/JNA
+        0x76 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jbe { dest }, bytes_consumed))
+        }
+        // JNBE/JA
+        0x77 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnbe { dest }, bytes_consumed))
+        }
+        // JS
+        0x78 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Js { dest }, bytes_consumed))
+        }
+        // JNS
+        0x79 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jns { dest }, bytes_consumed))
+        }
+        // JP/JPE
+        0x7A => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jp { dest }, bytes_consumed))
+        }
+        // JNP/JPO
+        0x7B => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnp { dest }, bytes_consumed))
+        }
+        // JL/JNGE
+        0x7C => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jl { dest }, bytes_consumed))
+        }
+        // JNL/JGE
+        0x7D => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnl { dest }, bytes_consumed))
+        }
+        // JLE/JNG
+        0x7E => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jle { dest }, bytes_consumed))
+        }
+        // JNLE/JG
+        0x7F => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jnle { dest }, bytes_consumed))
         }
         // Immediate with/to Register/Memory
-        0b10000000..=0b10000011 => {
+        0x80..=0x83 => {
             let s = (opcode & 0b00000010) != 0;
             let w = (opcode & 0b00000001) != 0;
             let is_word_data = !s && w;
@@ -166,274 +223,61 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
         }
-        // JE/JZ
-        0b01110100 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Je { dest }, bytes_consumed))
+        // MOV r/m, r/e
+        0x88..=0x8b => {
+            let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
+            Ok((IR::Mov { dest, src }, bytes_consumed))
         }
-        // JL/JNGE
-        0b01111100 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jl { dest }, bytes_consumed))
+        // LEA
+        0x8D => {
+            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            Ok((IR::Lea { dest, src }, bytes_consumed + 1))
         }
-        // JLE/JNG
-        0b01111110 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jle { dest }, bytes_consumed))
-        }
-        // JB/JNAE
-        0b01110010 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jb { dest }, bytes_consumed))
-        }
-        // JBE/JNA
-        0b01110110 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jbe { dest }, bytes_consumed))
-        }
-        // JP/JPE
-        0b01111010 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jp { dest }, bytes_consumed))
-        }
-        // JO
-        0b01110000 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jo { dest }, bytes_consumed))
-        }
-        // JS
-        0b01111000 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Js { dest }, bytes_consumed))
-        }
-        // JNE/JNZ
-        0b01110101 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jne { dest }, bytes_consumed))
-        }
-        // JNL/JGE
-        0b01111101 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jnl { dest }, bytes_consumed))
-        }
-        // JNLE/JG
-        0b01111111 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jnle { dest }, bytes_consumed))
-        }
-        // JNB/JAE
-        0b01110011 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jnb { dest }, bytes_consumed))
-        }
-        // JNBE/JA
-        0b01110111 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jnbe { dest }, bytes_consumed))
-        }
-        // JNP/JPO
-        0b01111011 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jnp { dest }, bytes_consumed))
-        }
-        // JNO
-        0b01110001 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jno { dest }, bytes_consumed))
-        }
-        // JNS
-        0b01111001 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jns { dest }, bytes_consumed))
-        }
-        // LOOP
-        0b11100010 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Loop { dest }, bytes_consumed))
-        }
-        // LOOPZ/LOOPE
-        0b11100001 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Loopz { dest }, bytes_consumed))
-        }
-        // LOOPNZ/LOOPNE
-        0b11100000 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Loopnz { dest }, bytes_consumed))
-        }
-        // JCXZ
-        0b11100011 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jcxz { dest }, bytes_consumed))
-        }
-        // JMP direct with short segment
-        0b11101011 => {
-            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
-            Ok((IR::Jmp { dest, short: true }, bytes_consumed))
-        }
-        // JMP direct with segment
-        0b11101001 => {
-            let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
-            Ok((IR::Jmp { dest, short: false }, bytes_consumed))
-        }
-        0b11110110..=0b11110111 => {
-            // 1111011w opcode
-            // atleast 2 bytes
-            if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
-            }
-            let w = (opcode & 0b00000001) != 0;
-
-            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
-
-            // We need bits 5-2 from bytes 2
-
-            let bits = (bytes[1] & 0b00111000) >> 3;
-            match bits {
-                // NEG
-                0b011 => Ok((IR::Neg { dest: rm }, bytes_consumed + 1)),
-                // MUL
-                0b100 => {
-                    unimplemented!()
-                }
-                // IMUL
-                0b101 => {
-                    unimplemented!()
-                }
-                // DIV
-                0b110 => {
-                    unimplemented!()
-                }
-                // IDIV
-                0b111 => {
-                    unimplemented!()
-                }
-                // NOT
-                0b010 => {
-                    unimplemented!()
-                }
-                // TEST Imm and r/m
-                0b000 => {
-                    // next byte is data, so we should have consumed 1 bytes only
-                    // also, we should have atleast 3 bytes (4 if word data)
-                    if bytes_consumed != 1 || bytes.len() < (3 + w as usize) {
-                        return Err(ParseError::InvalidOpcode(bytes[1]));
-                    }
-                    let data = if w {
-                        Operand::LongImmediate(u16::from_le_bytes([bytes[2], bytes[3]]))
-                    } else {
-                        Operand::Immediate(u8::from_le_bytes([bytes[2]]).into())
-                    };
-
-                    Ok((
-                        IR::Test {
-                            dest: rm,
-                            src: data,
-                        },
-                        3 + w as usize,
-                    ))
-                }
-                _ => Err(ParseError::InvalidOpcode(bytes[1])),
-            }
-        }
-        // PUSH reg
-        0b01010000..=0b01010111 => {
-            let reg = Register::from(opcode & 0b00000111, true);
-            Ok((
-                IR::Push {
-                    src: Operand::Register(reg),
-                },
-                1,
-            ))
-        }
-        // CALL direct w/ segment
-        0b11101000 => {
-            let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
-            Ok((IR::Call { dest }, bytes_consumed))
-        }
-        0b11111111 => {
-            if bytes.len() < 2 {
+        // MOV imm, reg
+        0xb0..=0xbf => {
+            let w = (opcode & 0b00001000) != 0;
+            if bytes.len() < (2 + w as usize) {
                 return Err(ParseError::UnexpectedEOF);
             }
 
-            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
-            let bits = (bytes[1] & 0b00111000) >> 3;
-            match bits {
-                // CALL indirect w/ segment
-                // CALL intersegment
-                0b010 | 0b011 => Ok((IR::Call { dest: rm }, bytes_consumed + 1)),
-                // JMP indirect w/ segment
-                0b100 => {
-                    unimplemented!()
-                }
-                // JMP intersegment
-                0b101 => {
-                    unimplemented!()
-                }
-                // PUSH r/m
-                0b110 => Ok((IR::Push { src: rm }, bytes_consumed + 1)),
-                _ => Err(ParseError::InvalidOpcode(bytes[1])),
-            }
-        }
-        // POP register
-        0b01011000..=0b01011111 => {
-            let reg = Register::from(opcode & 0b00000111, true);
-            Ok((
-                IR::Pop {
-                    dest: Operand::Register(reg),
-                },
-                1,
-            ))
-        }
-        // RET segment / intersegment
-        0b11000011 | 0b11001011 => Ok((IR::Ret, 1)),
-        // HLT
-        0b11110100 => Ok((IR::Hlt, 1)),
-        // IN variable port
-        0b11101100..=0b11101100 => {
-            let w = (opcode & 0b00000001) != 0;
-            let dest = if w {
-                Operand::Register(Register::AX)
+            let reg = Operand::Register(Register::from(opcode & 0b00000111, w));
+            let imm = if w {
+                Operand::LongImmediate(u16::from_le_bytes([bytes[1], bytes[2]]))
             } else {
-                Operand::Register(Register::AL)
+                Operand::Immediate(bytes[1])
             };
 
             Ok((
-                IR::In {
-                    dest,
-                    src: Operand::Register(Register::DX),
+                IR::Mov {
+                    dest: reg,
+                    src: imm,
                 },
-                1,
+                2 + w as usize,
             ))
         }
-        // IN fixed port
-        0b11100100..=0b11100101 => {
-            if bytes.len() < 2 {
+        // LES
+        0xC4 => {
+            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            Ok((IR::Les { dest, src }, bytes_consumed + 1))
+        }
+        // LDS
+        0xC5 => {
+            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            Ok((IR::Lds { dest, src }, bytes_consumed + 1))
+        }
+        // INT
+        0xcc..=0xcd => {
+            let specified = (opcode & 0b00000001) != 0;
+            if bytes.len() < (1 + specified as usize) {
                 return Err(ParseError::UnexpectedEOF);
             }
 
-            let w = (opcode & 0b00000001) != 0;
-            let dest = if w {
-                Operand::Register(Register::AX)
-            } else {
-                Operand::Register(Register::AL)
-            };
-            let port = Operand::Immediate(bytes[1]);
+            let int_type = if specified { bytes[1] } else { 3 };
 
-            Ok((IR::In { dest, src: port }, 2))
-        }
-        // DEC with reg
-        0b01001000..=0b01001111 => {
-            let reg = Register::from(opcode & 0b00000111, true);
-            Ok((
-                IR::Dec {
-                    dest: Operand::Register(reg),
-                },
-                1,
-            ))
+            Ok((IR::Int { int_type }, 1 + specified as usize))
         }
         // Logic instructions
-        0b11010000..=0b11010011 => {
+        0xD0..=0xD3 => {
             // TODO: v = 0 "count" = 1, v = 1 "count" = CL
             let _v = (opcode & 0b00000010) != 0;
             let w = (opcode & 0b00000001) != 0;
@@ -500,6 +344,162 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                     },
                     bytes_consumed + 1,
                 )),
+                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+            }
+        }
+        // LOOPNZ/LOOPNE
+        0xE0 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Loopnz { dest }, bytes_consumed))
+        }
+        // LOOPZ/LOOPE
+        0xE1 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Loopz { dest }, bytes_consumed))
+        }
+        // LOOP
+        0xE2 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Loop { dest }, bytes_consumed))
+        }
+        // JCXZ
+        0xE3 => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jcxz { dest }, bytes_consumed))
+        }
+        // IN fixed port
+        0xE4 | 0xE5 => {
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let w = (opcode & 0b00000001) != 0;
+            let dest = if w {
+                Operand::Register(Register::AX)
+            } else {
+                Operand::Register(Register::AL)
+            };
+            let port = Operand::Immediate(bytes[1]);
+
+            Ok((IR::In { dest, src: port }, 2))
+        }
+        // CALL direct w/ segment
+        0xE8 => {
+            let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
+            Ok((IR::Call { dest }, bytes_consumed))
+        }
+        // JMP direct with segment
+        0xE9 => {
+            let (dest, bytes_consumed) = parse_word_disp_bytes(bytes, ip)?;
+            Ok((IR::Jmp { dest, short: false }, bytes_consumed))
+        }
+        // JMP direct with short segment
+        0xEB => {
+            let (dest, bytes_consumed) = parse_disp_bytes(bytes, ip)?;
+            Ok((IR::Jmp { dest, short: true }, bytes_consumed))
+        }
+        // IN variable port
+        0xEC => {
+            let w = (opcode & 0b00000001) != 0;
+            let dest = if w {
+                Operand::Register(Register::AX)
+            } else {
+                Operand::Register(Register::AL)
+            };
+
+            Ok((
+                IR::In {
+                    dest,
+                    src: Operand::Register(Register::DX),
+                },
+                1,
+            ))
+        }
+        // HLT
+        0xF4 => Ok((IR::Hlt, 1)),
+        0xF6..=0xF7 => {
+            // 1111011w opcode
+            // atleast 2 bytes
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+            let w = (opcode & 0b00000001) != 0;
+
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
+
+            // We need bits 5-2 from bytes 2
+
+            let bits = (bytes[1] & 0b00111000) >> 3;
+            match bits {
+                // NEG
+                0b011 => Ok((IR::Neg { dest: rm }, bytes_consumed + 1)),
+                // MUL
+                0b100 => {
+                    unimplemented!()
+                }
+                // IMUL
+                0b101 => {
+                    unimplemented!()
+                }
+                // DIV
+                0b110 => {
+                    unimplemented!()
+                }
+                // IDIV
+                0b111 => {
+                    unimplemented!()
+                }
+                // NOT
+                0b010 => {
+                    unimplemented!()
+                }
+                // TEST Imm and r/m
+                0b000 => {
+                    // next byte is data, so we should have consumed 1 bytes only
+                    // also, we should have atleast 3 bytes (4 if word data)
+                    if bytes_consumed != 1 || bytes.len() < (3 + w as usize) {
+                        return Err(ParseError::InvalidOpcode(bytes[1]));
+                    }
+                    let data = if w {
+                        Operand::LongImmediate(u16::from_le_bytes([bytes[2], bytes[3]]))
+                    } else {
+                        Operand::Immediate(u8::from_le_bytes([bytes[2]]).into())
+                    };
+
+                    Ok((
+                        IR::Test {
+                            dest: rm,
+                            src: data,
+                        },
+                        3 + w as usize,
+                    ))
+                }
+                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+            }
+        }
+        // RET segment / intersegment
+        0xC3 | 0xCB => Ok((IR::Ret, 1)),
+        0xFF => {
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            let bits = (bytes[1] & 0b00111000) >> 3;
+            match bits {
+                // CALL indirect w/ segment
+                // CALL intersegment
+                0b010 | 0b011 => Ok((IR::Call { dest: rm }, bytes_consumed + 1)),
+                // JMP indirect w/ segment
+                0b100 => {
+                    unimplemented!()
+                }
+                // JMP intersegment
+                0b101 => {
+                    unimplemented!()
+                }
+                // PUSH r/m
+                0b110 => Ok((IR::Push { src: rm }, bytes_consumed + 1)),
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
         }
