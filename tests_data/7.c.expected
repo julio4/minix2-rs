@@ -1,0 +1,1928 @@
+0000: 55            push bp
+0001: 89e5          mov bp, sp
+0003: b80400        mov ax, 0004
+0006: 50            push ax
+0007: b81600        mov ax, 0016
+000a: 50            push ax
+000b: e81f00        call 002d
+000e: 5b            pop bx
+000f: 5b            pop bx
+0010: b80200        mov ax, 0002
+0013: 50            push ax
+0014: b80a00        mov ax, 000a
+0017: 50            push ax
+0018: e81200        call 002d
+001b: 5b            pop bx
+001c: 5b            pop bx
+001d: b80200        mov ax, 0002
+0020: 50            push ax
+0021: b80000        mov ax, 0000
+0024: 50            push ax
+0025: e80500        call 002d
+0028: 5b            pop bx
+0029: 5b            pop bx
+002a: e95611        jmp 1183
+002d: 55            push bp
+002e: 89e5          mov bp, sp
+0030: 50            push ax
+0031: 50            push ax
+0032: 8d5e06        lea bx, [bp+6]
+0035: 895efe        mov [bp-2], bx
+0038: b82e00        mov ax, 002e
+003b: 50            push ax
+003c: ff76fe        push [bp-2]
+003f: ff7604        push [bp+4]
+0042: e8e601        call 022b
+0045: 83c406        add sp, 6
+0048: e93811        jmp 1183
+004b: 55            push bp
+004c: 89e5          mov bp, sp
+004e: 50            push ax
+004f: 50            push ax
+0050: 56            push si
+0051: 57            push di
+0052: 8b7604        mov si, [bp+4]
+0055: 803c2a        cmp byte [si], 2a
+0058: 751b          jne 0075
+005a: 8b5e08        mov bx, [bp+8]
+005d: 8b17          mov dx, [bx]
+005f: 89d1          mov cx, dx
+0061: 83c102        add cx, 2
+0064: 8b5e08        mov bx, [bp+8]
+0067: 890f          mov [bx], cx
+0069: 89d3          mov bx, dx
+006b: 8b17          mov dx, [bx]
+006d: 8b5e06        mov bx, [bp+6]
+0070: 8917          mov [bx], dx
+0072: 46            inc si
+0073: eb25          jmp short 009a
+0075: 31ff          xor di, di
+0077: 8a04          mov al, [si]
+0079: 98            cbw
+007a: 2d3000        sub ax, 0030
+007d: 8946fc        mov [bp-4], ax
+0080: 7c13          jl 0095
+0082: 837efc09      cmp [bp-4], 9
+0086: 7f0d          jnle 0095
+0088: b80a00        mov ax, 000a
+008b: f7e7          mul di
+008d: 0346fc        add ax, [bp-4]
+0090: 89c7          mov di, ax
+0092: 46            inc si
+0093: ebe2          jmp short 0077
+0095: 8b5e06        mov bx, [bp+6]
+0098: 893f          mov [bx], di
+009a: 89f0          mov ax, si
+009c: e9e210        jmp 1181
+009f: 55            push bp
+00a0: 89e5          mov bp, sp
+00a2: 83ec0c        sub sp, c
+00a5: 56            push si
+00a6: 57            push di
+00a7: 8b7e04        mov di, [bp+4]
+00aa: 8b7608        mov si, [bp+8]
+00ad: 8976f6        mov [bp-a], si
+00b0: e97a00        jmp 012d
+00b3: 837e0e00      cmp [bp+e], 0
+00b7: 7410          je 00c9
+00b9: 8b1d          mov bx, [di]
+00bb: 830502        add [di], 2
+00be: 8b07          mov ax, [bx]
+00c0: 99            cwd
+00c1: 8946fc        mov [bp-4], ax
+00c4: 8956fe        mov [bp-2], dx
+00c7: eb72          jmp short 013b
+00c9: 8b1d          mov bx, [di]
+00cb: 830502        add [di], 2
+00ce: 8b17          mov dx, [bx]
+00d0: 8956f8        mov [bp-8], dx
+00d3: c746fa0000    mov [bp-6], 0000
+00d8: eb61          jmp short 013b
+00da: 837e0e00      cmp [bp+e], 0
+00de: 7413          je 00f3
+00e0: 830504        add [di], 4
+00e3: 8b1d          mov bx, [di]
+00e5: 8b57fc        mov dx, [bx-4]
+00e8: 8b4ffe        mov cx, [bx-2]
+00eb: 8956fc        mov [bp-4], dx
+00ee: 894efe        mov [bp-2], cx
+00f1: eb48          jmp short 013b
+00f3: 830504        add [di], 4
+00f6: 8b1d          mov bx, [di]
+00f8: 8b57fc        mov dx, [bx-4]
+00fb: 8b4ffe        mov cx, [bx-2]
+00fe: 8956f8        mov [bp-8], dx
+0101: 894efa        mov [bp-6], cx
+0104: eb35          jmp short 013b
+0106: 837e0e00      cmp [bp+e], 0
+010a: 7410          je 011c
+010c: 8b1d          mov bx, [di]
+010e: 830502        add [di], 2
+0111: 8b07          mov ax, [bx]
+0113: 99            cwd
+0114: 8946fc        mov [bp-4], ax
+0117: 8956fe        mov [bp-2], dx
+011a: eb1f          jmp short 013b
+011c: 8b1d          mov bx, [di]
+011e: 830502        add [di], 2
+0121: 8b17          mov dx, [bx]
+0123: 8956f8        mov [bp-8], dx
+0126: c746fa0000    mov [bp-6], 0000
+012b: eb0e          jmp short 013b
+012d: ba6000        mov dx, 0060
+0130: 235606        and dx, [bp+6]
+0133: bb6e00        mov bx, 006e
+0136: 89d0          mov ax, dx
+0138: e9cf0f        jmp 110a
+013b: 837e0e00      cmp [bp+e], 0
+013f: 7438          je 0179
+0141: 837efe00      cmp [bp-2], 0
+0145: 7d10          jnl 0157
+0147: c6042d        mov byte [si], 2d
+014a: 46            inc si
+014b: f75efe        neg [bp-2]
+014e: f75efc        neg [bp-4]
+0151: 835efe00      sbb [bp-2], 0
+0155: eb16          jmp short 016d
+0157: f6460602      test byte [bp+6], 2
+015b: 7406          je 0163
+015d: c6042b        mov byte [si], 2b
+0160: 46            inc si
+0161: eb0a          jmp short 016d
+0163: f6460604      test byte [bp+6], 4
+0167: 7404          je 016d
+0169: c60420        mov byte [si], 20
+016c: 46            inc si
+016d: 8b56fc        mov dx, [bp-4]
+0170: 8b4efe        mov cx, [bp-2]
+0173: 8956f8        mov [bp-8], dx
+0176: 894efa        mov [bp-6], cx
+0179: f6460608      test byte [bp+6], 8
+017d: 740a          je 0189
+017f: 807e0a6f      cmp byte [bp+a], 6f
+0183: 7504          jne 0189
+0185: c60430        mov byte [si], 30
+0188: 46            inc si
+0189: 8b56fa        mov dx, [bp-6]
+018c: 0b56f8        or dx, [bp-8]
+018f: 750b          jne 019c
+0191: 837e0c00      cmp [bp+c], 0
+0195: 7550          jne 01e7
+0197: 89f0          mov ax, si
+0199: e98c00        jmp 0228
+019c: f6460608      test byte [bp+6], 8
+01a0: 740c          je 01ae
+01a2: 807e0a78      cmp byte [bp+a], 78
+01a6: 740c          je 01b4
+01a8: 807e0a58      cmp byte [bp+a], 58
+01ac: 7406          je 01b4
+01ae: 807e0a70      cmp byte [bp+a], 70
+01b2: 7533          jne 01e7
+01b4: c60430        mov byte [si], 30
+01b7: 46            inc si
+01b8: 807e0a58      cmp byte [bp+a], 58
+01bc: 7505          jne 01c3
+01be: b85800        mov ax, 0058
+01c1: eb03          jmp short 01c6
+01c3: b87800        mov ax, 0078
+01c6: 8804          mov [si], al
+01c8: 46            inc si
+01c9: eb1c          jmp short 01e7
+01cb: c746f40200    mov [bp-c], 0002
+01d0: eb1f          jmp short 01f1
+01d2: c746f40800    mov [bp-c], 0008
+01d7: eb18          jmp short 01f1
+01d9: c746f40a00    mov [bp-c], 000a
+01de: eb11          jmp short 01f1
+01e0: c746f41000    mov [bp-c], 0010
+01e5: eb0a          jmp short 01f1
+01e7: 8a460a        mov al, [bp+a]
+01ea: 98            cbw
+01eb: bb7a00        mov bx, 007a
+01ee: e9190f        jmp 110a
+01f1: ff760c        push [bp+c]
+01f4: 56            push si
+01f5: ff76f4        push [bp-c]
+01f8: ff76fa        push [bp-6]
+01fb: ff76f8        push [bp-8]
+01fe: e8e707        call 09e8
+0201: 83c40a        add sp, a
+0204: 89c6          mov si, ax
+0206: 807e0a58      cmp byte [bp+a], 58
+020a: 751a          jne 0226
+020c: 3976f6        cmp [bp-a], si
+020f: 7415          je 0226
+0211: 8b5ef6        mov bx, [bp-a]
+0214: 8a07          mov al, [bx]
+0216: 98            cbw
+0217: 50            push ax
+0218: e80c0b        call 0d27
+021b: 5b            pop bx
+021c: 8b5ef6        mov bx, [bp-a]
+021f: 8807          mov [bx], al
+0221: ff46f6        inc [bp-a]
+0224: ebe6          jmp short 020c
+0226: 89f0          mov ax, si
+0228: e9560f        jmp 1181
+022b: 55            push bp
+022c: 89e5          mov bp, sp
+022e: 81ec1a04      sub sp, 041a
+0232: 56            push si
+0233: 57            push di
+0234: 8b7608        mov si, [bp+8]
+0237: c746ec0000    mov [bp-14], 0000
+023c: 8b5e04        mov bx, [bp+4]
+023f: ff4604        inc [bp+4]
+0242: 8a07          mov al, [bx]
+0244: 98            cbw
+0245: 8946f8        mov [bp-8], ax
+0248: 09c0          or ax, ax
+024a: 7503          jne 024f
+024c: e93805        jmp 0787
+024f: 837ef825      cmp [bp-8], 25
+0253: 7440          je 0295
+0255: 8b14          mov dx, [si]
+0257: 4a            dec dx
+0258: 8914          mov [si], dx
+025a: 7c10          jl 026c
+025c: 8b56f8        mov dx, [bp-8]
+025f: 30f6          xor dh, dh
+0261: 8b5c0a        mov bx, [si+a]
+0264: ff440a        inc [si+a]
+0267: 8817          mov [bx], dl
+0269: 52            push dx
+026a: eb0a          jmp short 0276
+026c: 56            push si
+026d: ff76f8        push [bp-8]
+0270: e85305        call 07c6
+0273: 5b            pop bx
+0274: 5b            pop bx
+0275: 50            push ax
+0276: 5a            pop dx
+0277: 83faff        cmp dx, -1
+027a: 7514          jne 0290
+027c: 837eec00      cmp [bp-14], 0
+0280: 7408          je 028a
+0282: 8b46ec        mov ax, [bp-14]
+0285: f7d8          neg ax
+0287: e90005        jmp 078a
+028a: b8ffff        mov ax, ffff
+028d: e9fa04        jmp 078a
+0290: ff46ec        inc [bp-14]
+0293: eba7          jmp short 023c
+0295: 31ff          xor di, di
+0297: eb24          jmp short 02bd
+0299: 81cf0100      or di, 0001
+029d: eb2a          jmp short 02c9
+029f: 81cf0200      or di, 0002
+02a3: eb24          jmp short 02c9
+02a5: 81cf0400      or di, 0004
+02a9: eb1e          jmp short 02c9
+02ab: 81cf0800      or di, 0008
+02af: eb18          jmp short 02c9
+02b1: 81cf1000      or di, 0010
+02b5: eb12          jmp short 02c9
+02b7: 81cf0010      or di, 1000
+02bb: eb0f          jmp short 02cc
+02bd: 8b5e04        mov bx, [bp+4]
+02c0: 8a07          mov al, [bx]
+02c2: 98            cbw
+02c3: bb9e00        mov bx, 009e
+02c6: e9410e        jmp 110a
+02c9: ff4604        inc [bp+4]
+02cc: f7c70010      test di, 1000
+02d0: 74eb          je 02bd
+02d2: 8b5604        mov dx, [bp+4]
+02d5: 8956ea        mov [bp-16], dx
+02d8: 8d4606        lea ax, [bp+6]
+02db: 50            push ax
+02dc: 8d46f6        lea ax, [bp-a]
+02df: 50            push ax
+02e0: ff7604        push [bp+4]
+02e3: e865fd        call 004b
+02e6: 83c406        add sp, 6
+02e9: 894604        mov [bp+4], ax
+02ec: 3946ea        cmp [bp-16], ax
+02ef: 7404          je 02f5
+02f1: 81cf0001      or di, 0100
+02f5: 8b5e04        mov bx, [bp+4]
+02f8: 803f2e        cmp byte [bx], 2e
+02fb: 7527          jne 0324
+02fd: ff4604        inc [bp+4]
+0300: 8b5604        mov dx, [bp+4]
+0303: 8956ea        mov [bp-16], dx
+0306: 8d4606        lea ax, [bp+6]
+0309: 50            push ax
+030a: 8d46f4        lea ax, [bp-c]
+030d: 50            push ax
+030e: ff7604        push [bp+4]
+0311: e837fd        call 004b
+0314: 83c406        add sp, 6
+0317: 894604        mov [bp+4], ax
+031a: 837ef400      cmp [bp-c], 0
+031e: 7c04          jl 0324
+0320: 81cf0002      or di, 0200
+0324: f7c70001      test di, 0100
+0328: 740d          je 0337
+032a: 837ef600      cmp [bp-a], 0
+032e: 7d07          jnl 0337
+0330: f75ef6        neg [bp-a]
+0333: 81cf0100      or di, 0001
+0337: f7c70001      test di, 0100
+033b: 7505          jne 0342
+033d: c746f60000    mov [bp-a], 0000
+0342: f7c70200      test di, 0002
+0346: 7404          je 034c
+0348: 81e7fbff      and di, fffb
+034c: f7c70100      test di, 0001
+0350: 7404          je 0356
+0352: 81e7efff      and di, ffef
+0356: 8d9ee7fb      lea bx, [bp-419]
+035a: 895ee8        mov [bp-18], bx
+035d: 895efe        mov [bp-2], bx
+0360: eb1e          jmp short 0380
+0362: 81cf2000      or di, 0020
+0366: ff4604        inc [bp+4]
+0369: e9d701        jmp 0543
+036c: 81cf4000      or di, 0040
+0370: ff4604        inc [bp+4]
+0373: e9cd01        jmp 0543
+0376: 81cf8000      or di, 0080
+037a: ff4604        inc [bp+4]
+037d: e9c301        jmp 0543
+0380: 8b5e04        mov bx, [bp+4]
+0383: 8a07          mov al, [bx]
+0385: 98            cbw
+0386: bbb600        mov bx, 00b6
+0389: e97e0d        jmp 110a
+038c: 8b14          mov dx, [si]
+038e: 4a            dec dx
+038f: 8914          mov [si], dx
+0391: 7c10          jl 03a3
+0393: 8b56f8        mov dx, [bp-8]
+0396: 30f6          xor dh, dh
+0398: 8b5c0a        mov bx, [si+a]
+039b: ff440a        inc [si+a]
+039e: 8817          mov [bx], dl
+03a0: 52            push dx
+03a1: eb0a          jmp short 03ad
+03a3: 56            push si
+03a4: ff76f8        push [bp-8]
+03a7: e81c04        call 07c6
+03aa: 5b            pop bx
+03ab: 5b            pop bx
+03ac: 50            push ax
+03ad: 5a            pop dx
+03ae: 83faff        cmp dx, -1
+03b1: 7514          jne 03c7
+03b3: 837eec00      cmp [bp-14], 0
+03b7: 7408          je 03c1
+03b9: 8b46ec        mov ax, [bp-14]
+03bc: f7d8          neg ax
+03be: e9c903        jmp 078a
+03c1: b8ffff        mov ax, ffff
+03c4: e9c303        jmp 078a
+03c7: ff46ec        inc [bp-14]
+03ca: e96ffe        jmp 023c
+03cd: f7c72000      test di, 0020
+03d1: 7414          je 03e7
+03d3: 8b5e06        mov bx, [bp+6]
+03d6: 83c302        add bx, 2
+03d9: 895e06        mov [bp+6], bx
+03dc: 8b5ffe        mov bx, [bx-2]
+03df: 8b56ec        mov dx, [bp-14]
+03e2: 8917          mov [bx], dx
+03e4: e955fe        jmp 023c
+03e7: f7c74000      test di, 0040
+03eb: 7418          je 0405
+03ed: 8b46ec        mov ax, [bp-14]
+03f0: 99            cwd
+03f1: 8b5e06        mov bx, [bp+6]
+03f4: 83c302        add bx, 2
+03f7: 895e06        mov [bp+6], bx
+03fa: 8b5ffe        mov bx, [bx-2]
+03fd: 8907          mov [bx], ax
+03ff: 895702        mov [bx+2], dx
+0402: e937fe        jmp 023c
+0405: 8b5e06        mov bx, [bp+6]
+0408: 83c302        add bx, 2
+040b: 895e06        mov [bp+6], bx
+040e: 8b5ffe        mov bx, [bx-2]
+0411: 8b56ec        mov dx, [bp-14]
+0414: 8917          mov [bx], dx
+0416: e923fe        jmp 023c
+0419: 8b5e06        mov bx, [bp+6]
+041c: 83c302        add bx, 2
+041f: 895e06        mov [bp+6], bx
+0422: 8b57fe        mov dx, [bx-2]
+0425: 8956e8        mov [bp-18], dx
+0428: 09d2          or dx, dx
+042a: 7505          jne 0431
+042c: c746e80e01    mov [bp-18], 010e
+0431: 8b56e8        mov dx, [bp-18]
+0434: 8956fe        mov [bp-2], dx
+0437: 837ef400      cmp [bp-c], 0
+043b: 7509          jne 0446
+043d: f7c70002      test di, 0200
+0441: 7403          je 0446
+0443: e90f01        jmp 0555
+0446: 8b5efe        mov bx, [bp-2]
+0449: 803f00        cmp byte [bx], 0
+044c: 7503          jne 0451
+044e: e90401        jmp 0555
+0451: ff46fe        inc [bp-2]
+0454: ff4ef4        dec [bp-c]
+0457: ebde          jmp short 0437
+0459: f7c70002      test di, 0200
+045d: 7507          jne 0466
+045f: c746f40100    mov [bp-c], 0001
+0464: eb0a          jmp short 0470
+0466: 837ef870      cmp [bp-8], 70
+046a: 7404          je 0470
+046c: 81e7efff      and di, ffef
+0470: 8b46f8        mov ax, [bp-8]
+0473: 98            cbw
+0474: 31db          xor bx, bx
+0476: 53            push bx
+0477: ff76f4        push [bp-c]
+047a: 50            push ax
+047b: ff76fe        push [bp-2]
+047e: 57            push di
+047f: 8d4606        lea ax, [bp+6]
+0482: 50            push ax
+0483: e819fc        call 009f
+0486: 83c40c        add sp, c
+0489: 8946fe        mov [bp-2], ax
+048c: e9c600        jmp 0555
+048f: 81cf0004      or di, 0400
+0493: f7c70002      test di, 0200
+0497: 7507          jne 04a0
+0499: c746f40100    mov [bp-c], 0001
+049e: eb04          jmp short 04a4
+04a0: 81e7efff      and di, ffef
+04a4: 8b46f8        mov ax, [bp-8]
+04a7: 98            cbw
+04a8: bb0100        mov bx, 0001
+04ab: 53            push bx
+04ac: ff76f4        push [bp-c]
+04af: 50            push ax
+04b0: ff76fe        push [bp-2]
+04b3: 57            push di
+04b4: 8d4606        lea ax, [bp+6]
+04b7: 50            push ax
+04b8: e8e4fb        call 009f
+04bb: 83c40c        add sp, c
+04be: 8946fe        mov [bp-2], ax
+04c1: e99100        jmp 0555
+04c4: 8b5e06        mov bx, [bp+6]
+04c7: 83c302        add bx, 2
+04ca: 895e06        mov [bp+6], bx
+04cd: ff77fe        push [bx-2]
+04d0: 8b5efe        mov bx, [bp-2]
+04d3: 5a            pop dx
+04d4: 8817          mov [bx], dl
+04d6: ff46fe        inc [bp-2]
+04d9: e97900        jmp 0555
+04dc: f7c70002      test di, 0200
+04e0: 740b          je 04ed
+04e2: 837ef400      cmp [bp-c], 0
+04e6: 7505          jne 04ed
+04e8: c746f40100    mov [bp-c], 0001
+04ed: f7c70002      test di, 0200
+04f1: 7505          jne 04f8
+04f3: c746f40600    mov [bp-c], 0006
+04f8: 817ef40104    cmp [bp-c], 0401
+04fd: 7205          jb 0504
+04ff: c746f40004    mov [bp-c], 0400
+0504: 81cf0004      or di, 0400
+0508: 8b46f8        mov ax, [bp-8]
+050b: 98            cbw
+050c: ff76f4        push [bp-c]
+050f: 50            push ax
+0510: ff76fe        push [bp-2]
+0513: 57            push di
+0514: 8d4606        lea ax, [bp+6]
+0517: 50            push ax
+0518: e82808        call 0d43
+051b: 83c40a        add sp, a
+051e: 8946fe        mov [bp-2], ax
+0521: eb32          jmp short 0555
+0523: 8b5e06        mov bx, [bp+6]
+0526: 83c302        add bx, 2
+0529: 895e06        mov [bp+6], bx
+052c: 8b57fe        mov dx, [bx-2]
+052f: 895606        mov [bp+6], dx
+0532: 83c202        add dx, 2
+0535: 895606        mov [bp+6], dx
+0538: 89d3          mov bx, dx
+053a: 8b57fe        mov dx, [bx-2]
+053d: 895604        mov [bp+4], dx
+0540: e9f9fc        jmp 023c
+0543: 8b5e04        mov bx, [bp+4]
+0546: ff4604        inc [bp+4]
+0549: 8a07          mov al, [bx]
+054b: 98            cbw
+054c: 8946f8        mov [bp-8], ax
+054f: bbc600        mov bx, 00c6
+0552: e9b50b        jmp 110a
+0555: c746f22000    mov [bp-e], 0020
+055a: f7c71000      test di, 0010
+055e: 7405          je 0565
+0560: c746f23000    mov [bp-e], 0030
+0565: 8b56fe        mov dx, [bp-2]
+0568: 2b56e8        sub dx, [bp-18]
+056b: 8956fc        mov [bp-4], dx
+056e: c746ee0000    mov [bp-12], 0000
+0573: f7c71000      test di, 0010
+0577: 7433          je 05ac
+0579: 837ef878      cmp [bp-8], 78
+057d: 7406          je 0585
+057f: 837ef858      cmp [bp-8], 58
+0583: 7506          jne 058b
+0585: f7c70800      test di, 0008
+0589: 751e          jne 05a9
+058b: 837ef870      cmp [bp-8], 70
+058f: 7418          je 05a9
+0591: f7c70004      test di, 0400
+0595: 7415          je 05ac
+0597: 8b5ee8        mov bx, [bp-18]
+059a: 803f2b        cmp byte [bx], 2b
+059d: 740a          je 05a9
+059f: 803f2d        cmp byte [bx], 2d
+05a2: 7405          je 05a9
+05a4: 803f20        cmp byte [bx], 20
+05a7: 7503          jne 05ac
+05a9: ff46ee        inc [bp-12]
+05ac: 8b56f6        mov dx, [bp-a]
+05af: 2b56fc        sub dx, [bp-4]
+05b2: 8956fa        mov [bp-6], dx
+05b5: 7f03          jnle 05ba
+05b7: e93001        jmp 06ea
+05ba: f7c70100      test di, 0001
+05be: 7403          je 05c3
+05c0: e92701        jmp 06ea
+05c3: 8b56fa        mov dx, [bp-6]
+05c6: 0156ec        add [bp-14], dx
+05c9: 837eee00      cmp [bp-12], 0
+05cd: 7503          jne 05d2
+05cf: e9d800        jmp 06aa
+05d2: f7c70004      test di, 0400
+05d6: 7450          je 0628
+05d8: ff4efc        dec [bp-4]
+05db: ff46ec        inc [bp-14]
+05de: 8b14          mov dx, [si]
+05e0: 4a            dec dx
+05e1: 8914          mov [si], dx
+05e3: 7c15          jl 05fa
+05e5: 8b5ee8        mov bx, [bp-18]
+05e8: ff46e8        inc [bp-18]
+05eb: 8a17          mov dl, [bx]
+05ed: 30f6          xor dh, dh
+05ef: 8b5c0a        mov bx, [si+a]
+05f2: ff440a        inc [si+a]
+05f5: 8817          mov [bx], dl
+05f7: 52            push dx
+05f8: eb11          jmp short 060b
+05fa: 8b5ee8        mov bx, [bp-18]
+05fd: ff46e8        inc [bp-18]
+0600: 8a07          mov al, [bx]
+0602: 98            cbw
+0603: 56            push si
+0604: 50            push ax
+0605: e8be01        call 07c6
+0608: 5b            pop bx
+0609: 5b            pop bx
+060a: 50            push ax
+060b: 5a            pop dx
+060c: 83faff        cmp dx, -1
+060f: 7403          je 0614
+0611: e99600        jmp 06aa
+0614: 837eec00      cmp [bp-14], 0
+0618: 7408          je 0622
+061a: 8b46ec        mov ax, [bp-14]
+061d: f7d8          neg ax
+061f: e96801        jmp 078a
+0622: b8ffff        mov ax, ffff
+0625: e96201        jmp 078a
+0628: 836efc02      sub [bp-4], 2
+062c: 8346ec02      add [bp-14], 2
+0630: 8b14          mov dx, [si]
+0632: 4a            dec dx
+0633: 8914          mov [si], dx
+0635: 7c15          jl 064c
+0637: 8b5ee8        mov bx, [bp-18]
+063a: ff46e8        inc [bp-18]
+063d: 8a17          mov dl, [bx]
+063f: 30f6          xor dh, dh
+0641: 8b5c0a        mov bx, [si+a]
+0644: ff440a        inc [si+a]
+0647: 8817          mov [bx], dl
+0649: 52            push dx
+064a: eb11          jmp short 065d
+064c: 8b5ee8        mov bx, [bp-18]
+064f: ff46e8        inc [bp-18]
+0652: 8a07          mov al, [bx]
+0654: 98            cbw
+0655: 56            push si
+0656: 50            push ax
+0657: e86c01        call 07c6
+065a: 5b            pop bx
+065b: 5b            pop bx
+065c: 50            push ax
+065d: 5a            pop dx
+065e: 83faff        cmp dx, -1
+0661: 7433          je 0696
+0663: 8b14          mov dx, [si]
+0665: 4a            dec dx
+0666: 8914          mov [si], dx
+0668: 7c15          jl 067f
+066a: 8b5ee8        mov bx, [bp-18]
+066d: ff46e8        inc [bp-18]
+0670: 8a17          mov dl, [bx]
+0672: 30f6          xor dh, dh
+0674: 8b5c0a        mov bx, [si+a]
+0677: ff440a        inc [si+a]
+067a: 8817          mov [bx], dl
+067c: 52            push dx
+067d: eb11          jmp short 0690
+067f: 8b5ee8        mov bx, [bp-18]
+0682: ff46e8        inc [bp-18]
+0685: 8a07          mov al, [bx]
+0687: 98            cbw
+0688: 56            push si
+0689: 50            push ax
+068a: e83901        call 07c6
+068d: 5b            pop bx
+068e: 5b            pop bx
+068f: 50            push ax
+0690: 5a            pop dx
+0691: 83faff        cmp dx, -1
+0694: 7514          jne 06aa
+0696: 837eec00      cmp [bp-14], 0
+069a: 7408          je 06a4
+069c: 8b46ec        mov ax, [bp-14]
+069f: f7d8          neg ax
+06a1: e9e600        jmp 078a
+06a4: b8ffff        mov ax, ffff
+06a7: e9e000        jmp 078a
+06aa: 8b14          mov dx, [si]
+06ac: 4a            dec dx
+06ad: 8914          mov [si], dx
+06af: 7c10          jl 06c1
+06b1: 8b56f2        mov dx, [bp-e]
+06b4: 30f6          xor dh, dh
+06b6: 8b5c0a        mov bx, [si+a]
+06b9: ff440a        inc [si+a]
+06bc: 8817          mov [bx], dl
+06be: 52            push dx
+06bf: eb0a          jmp short 06cb
+06c1: 56            push si
+06c2: ff76f2        push [bp-e]
+06c5: e8fe00        call 07c6
+06c8: 5b            pop bx
+06c9: 5b            pop bx
+06ca: 50            push ax
+06cb: 5a            pop dx
+06cc: 83faff        cmp dx, -1
+06cf: 7514          jne 06e5
+06d1: 837eec00      cmp [bp-14], 0
+06d5: 7408          je 06df
+06d7: 8b46ec        mov ax, [bp-14]
+06da: f7d8          neg ax
+06dc: e9ab00        jmp 078a
+06df: b8ffff        mov ax, ffff
+06e2: e9a500        jmp 078a
+06e5: ff4efa        dec [bp-6]
+06e8: 75c0          jne 06aa
+06ea: 8b56fc        mov dx, [bp-4]
+06ed: 0156ec        add [bp-14], dx
+06f0: ff4efc        dec [bp-4]
+06f3: 7c45          jl 073a
+06f5: 8b14          mov dx, [si]
+06f7: 4a            dec dx
+06f8: 8914          mov [si], dx
+06fa: 7c15          jl 0711
+06fc: 8b5ee8        mov bx, [bp-18]
+06ff: ff46e8        inc [bp-18]
+0702: 8a17          mov dl, [bx]
+0704: 30f6          xor dh, dh
+0706: 8b5c0a        mov bx, [si+a]
+0709: ff440a        inc [si+a]
+070c: 8817          mov [bx], dl
+070e: 52            push dx
+070f: eb11          jmp short 0722
+0711: 8b5ee8        mov bx, [bp-18]
+0714: ff46e8        inc [bp-18]
+0717: 8a07          mov al, [bx]
+0719: 98            cbw
+071a: 56            push si
+071b: 50            push ax
+071c: e8a700        call 07c6
+071f: 5b            pop bx
+0720: 5b            pop bx
+0721: 50            push ax
+0722: 5a            pop dx
+0723: 83faff        cmp dx, -1
+0726: 75c8          jne 06f0
+0728: 837eec00      cmp [bp-14], 0
+072c: 7407          je 0735
+072e: 8b46ec        mov ax, [bp-14]
+0731: f7d8          neg ax
+0733: eb55          jmp short 078a
+0735: b8ffff        mov ax, ffff
+0738: eb50          jmp short 078a
+073a: 837efa00      cmp [bp-6], 0
+073e: 7e06          jle 0746
+0740: 8b56fa        mov dx, [bp-6]
+0743: 0156ec        add [bp-14], dx
+0746: ff4efa        dec [bp-6]
+0749: 7d03          jnl 074e
+074b: e9eefa        jmp 023c
+074e: 8b14          mov dx, [si]
+0750: 4a            dec dx
+0751: 8914          mov [si], dx
+0753: 7c10          jl 0765
+0755: 8b56f2        mov dx, [bp-e]
+0758: 30f6          xor dh, dh
+075a: 8b5c0a        mov bx, [si+a]
+075d: ff440a        inc [si+a]
+0760: 8817          mov [bx], dl
+0762: 52            push dx
+0763: eb0a          jmp short 076f
+0765: 56            push si
+0766: ff76f2        push [bp-e]
+0769: e85a00        call 07c6
+076c: 5b            pop bx
+076d: 5b            pop bx
+076e: 50            push ax
+076f: 5a            pop dx
+0770: 83faff        cmp dx, -1
+0773: 75d1          jne 0746
+0775: 837eec00      cmp [bp-14], 0
+0779: 7407          je 0782
+077b: 8b46ec        mov ax, [bp-14]
+077e: f7d8          neg ax
+0780: eb08          jmp short 078a
+0782: b8ffff        mov ax, ffff
+0785: eb03          jmp short 078a
+0787: 8b46ec        mov ax, [bp-14]
+078a: e9f409        jmp 1181
+078d: 55            push bp
+078e: 89e5          mov bp, sp
+0790: 56            push si
+0791: 57            push di
+0792: 8b7e08        mov di, [bp+8]
+0795: 57            push di
+0796: ff7606        push [bp+6]
+0799: ff7604        push [bp+4]
+079c: e8ef06        call 0e8e
+079f: 83c406        add sp, 6
+07a2: 89c6          mov si, ax
+07a4: 09c0          or ax, ax
+07a6: 7e14          jle 07bc
+07a8: 39fe          cmp si, di
+07aa: 7d10          jnl 07bc
+07ac: 89fa          mov dx, di
+07ae: 29f2          sub dx, si
+07b0: 89d7          mov di, dx
+07b2: 89f2          mov dx, si
+07b4: 035606        add dx, [bp+6]
+07b7: 895606        mov [bp+6], dx
+07ba: ebd9          jmp short 0795
+07bc: 31c0          xor ax, ax
+07be: 09f6          or si, si
+07c0: 7e01          jle 07c3
+07c2: 40            inc ax
+07c3: e9bb09        jmp 1181
+07c6: 55            push bp
+07c7: 89e5          mov bp, sp
+07c9: 50            push ax
+07ca: 50            push ax
+07cb: 56            push si
+07cc: 57            push di
+07cd: 8b7e04        mov di, [bp+4]
+07d0: 8b7606        mov si, [bp+6]
+07d3: c7061801f90f  mov [0118], 0ff9
+07d9: 837c0200      cmp [si+2], 0
+07dd: 7d07          jnl 07e6
+07df: 89f8          mov ax, di
+07e1: 30e4          xor ah, ah
+07e3: e9ff01        jmp 09e5
+07e6: f6440402      test byte [si+4], 2
+07ea: 7506          jne 07f2
+07ec: b8ffff        mov ax, ffff
+07ef: e9f301        jmp 09e5
+07f2: f6440480      test byte [si+4], 80
+07f6: 740c          je 0804
+07f8: f6440410      test byte [si+4], 10
+07fc: 7506          jne 0804
+07fe: b8ffff        mov ax, ffff
+0801: e9e101        jmp 09e5
+0804: 8164047fff    and [si+4], ff7f
+0809: 814c040001    or [si+4], 0100
+080e: f6440404      test byte [si+4], 4
+0812: 7403          je 0817
+0814: e97700        jmp 088e
+0817: 837c0800      cmp [si+8], 0
+081b: 7403          je 0820
+081d: e96e00        jmp 088e
+0820: 81fe2e00      cmp si, 002e
+0824: 7532          jne 0858
+0826: ff363000      push [0030]
+082a: e8e405        call 0e11
+082d: 5b            pop bx
+082e: 09c0          or ax, ax
+0830: 7426          je 0858
+0832: b80004        mov ax, 0400
+0835: 50            push ax
+0836: e8a902        call 0ae2
+0839: 5b            pop bx
+083a: 894408        mov [si+8], ax
+083d: 09c0          or ax, ax
+083f: 7507          jne 0848
+0841: 814c040400    or [si+4], 0004
+0846: eb40          jmp short 0888
+0848: 814c044800    or [si+4], 0048
+084d: c744060004    mov [si+6], 0400
+0852: c704ffff      mov [si], ffff
+0856: eb30          jmp short 0888
+0858: b80004        mov ax, 0400
+085b: 50            push ax
+085c: e88302        call 0ae2
+085f: 5b            pop bx
+0860: 894408        mov [si+8], ax
+0863: 09c0          or ax, ax
+0865: 7507          jne 086e
+0867: 814c040400    or [si+4], 0004
+086c: eb1a          jmp short 0888
+086e: 814c040800    or [si+4], 0008
+0873: c744060004    mov [si+6], 0400
+0878: f6440440      test byte [si+4], 40
+087c: 7506          jne 0884
+087e: c704ff03      mov [si], 03ff
+0882: eb04          jmp short 0888
+0884: c704ffff      mov [si], ffff
+0888: 8b5408        mov dx, [si+8]
+088b: 89540a        mov [si+a], dx
+088e: f6440404      test byte [si+4], 4
+0892: 745b          je 08ef
+0894: 89fa          mov dx, di
+0896: 8856ff        mov [bp-1], dl
+0899: c7040000      mov [si], 0000
+089d: f744040002    test [si+4], 0200
+08a2: 7423          je 08c7
+08a4: 31c0          xor ax, ax
+08a6: bb0200        mov bx, 0002
+08a9: 53            push bx
+08aa: 50            push ax
+08ab: 50            push ax
+08ac: ff7402        push [si+2]
+08af: e87d05        call 0e2f
+08b2: 83c408        add sp, 8
+08b5: 21c2          and dx, ax
+08b7: 83faff        cmp dx, -1
+08ba: 750b          jne 08c7
+08bc: 814c042000    or [si+4], 0020
+08c1: b8ffff        mov ax, ffff
+08c4: e91e01        jmp 09e5
+08c7: b80100        mov ax, 0001
+08ca: 50            push ax
+08cb: 8d46ff        lea ax, [bp-1]
+08ce: 50            push ax
+08cf: ff7402        push [si+2]
+08d2: e8b905        call 0e8e
+08d5: 83c406        add sp, 6
+08d8: 3d0100        cmp ax, 0001
+08db: 740b          je 08e8
+08dd: 814c042000    or [si+4], 0020
+08e2: b8ffff        mov ax, ffff
+08e5: e9fd00        jmp 09e5
+08e8: 89f8          mov ax, di
+08ea: 30e4          xor ah, ah
+08ec: e9f600        jmp 09e5
+08ef: f6440440      test byte [si+4], 40
+08f3: 7503          jne 08f8
+08f5: e97700        jmp 096f
+08f8: 89fa          mov dx, di
+08fa: 8b5c0a        mov bx, [si+a]
+08fd: ff440a        inc [si+a]
+0900: 8817          mov [bx], dl
+0902: 83ff0a        cmp di, a
+0905: 740c          je 0913
+0907: 8b5406        mov dx, [si+6]
+090a: f7da          neg dx
+090c: 3914          cmp [si], dx
+090e: 7403          je 0913
+0910: e9ce00        jmp 09e1
+0913: 8b14          mov dx, [si]
+0915: f7da          neg dx
+0917: 8956fc        mov [bp-4], dx
+091a: 8b5408        mov dx, [si+8]
+091d: 89540a        mov [si+a], dx
+0920: c7040000      mov [si], 0000
+0924: f744040002    test [si+4], 0200
+0929: 7423          je 094e
+092b: 31c0          xor ax, ax
+092d: bb0200        mov bx, 0002
+0930: 53            push bx
+0931: 50            push ax
+0932: 50            push ax
+0933: ff7402        push [si+2]
+0936: e8f604        call 0e2f
+0939: 83c408        add sp, 8
+093c: 21c2          and dx, ax
+093e: 83faff        cmp dx, -1
+0941: 750b          jne 094e
+0943: 814c042000    or [si+4], 0020
+0948: b8ffff        mov ax, ffff
+094b: e99700        jmp 09e5
+094e: ff76fc        push [bp-4]
+0951: ff7408        push [si+8]
+0954: ff7402        push [si+2]
+0957: e833fe        call 078d
+095a: 83c406        add sp, 6
+095d: 09c0          or ax, ax
+095f: 7403          je 0964
+0961: e97d00        jmp 09e1
+0964: 814c042000    or [si+4], 0020
+0969: b8ffff        mov ax, ffff
+096c: e97600        jmp 09e5
+096f: 8b540a        mov dx, [si+a]
+0972: 2b5408        sub dx, [si+8]
+0975: 8956fc        mov [bp-4], dx
+0978: 8b5406        mov dx, [si+6]
+097b: 4a            dec dx
+097c: 8914          mov [si], dx
+097e: 8b5c08        mov bx, [si+8]
+0981: 83c301        add bx, 1
+0984: 895c0a        mov [si+a], bx
+0987: 837efc00      cmp [bp-4], 0
+098b: 7e4d          jle 09da
+098d: f744040002    test [si+4], 0200
+0992: 7422          je 09b6
+0994: 31c0          xor ax, ax
+0996: bb0200        mov bx, 0002
+0999: 53            push bx
+099a: 50            push ax
+099b: 50            push ax
+099c: ff7402        push [si+2]
+099f: e88d04        call 0e2f
+09a2: 83c408        add sp, 8
+09a5: 21c2          and dx, ax
+09a7: 83faff        cmp dx, -1
+09aa: 750a          jne 09b6
+09ac: 814c042000    or [si+4], 0020
+09b1: b8ffff        mov ax, ffff
+09b4: eb2f          jmp short 09e5
+09b6: ff76fc        push [bp-4]
+09b9: ff7408        push [si+8]
+09bc: ff7402        push [si+2]
+09bf: e8cbfd        call 078d
+09c2: 83c406        add sp, 6
+09c5: 09c0          or ax, ax
+09c7: 7511          jne 09da
+09c9: 89fa          mov dx, di
+09cb: 8b5c08        mov bx, [si+8]
+09ce: 8817          mov [bx], dl
+09d0: 814c042000    or [si+4], 0020
+09d5: b8ffff        mov ax, ffff
+09d8: eb0b          jmp short 09e5
+09da: 89fa          mov dx, di
+09dc: 8b5c08        mov bx, [si+8]
+09df: 8817          mov [bx], dl
+09e1: 89f8          mov ax, di
+09e3: 30e4          xor ah, ah
+09e5: e99907        jmp 1181
+09e8: 55            push bp
+09e9: 89e5          mov bp, sp
+09eb: 56            push si
+09ec: 57            push di
+09ed: 8b760a        mov si, [bp+a]
+09f0: 8b4608        mov ax, [bp+8]
+09f3: 99            cwd
+09f4: ff7606        push [bp+6]
+09f7: ff7604        push [bp+4]
+09fa: 52            push dx
+09fb: 50            push ax
+09fc: e88c07        call 118b
+09ff: 89c7          mov di, ax
+0a01: 8b4608        mov ax, [bp+8]
+0a04: 99            cwd
+0a05: ff7606        push [bp+6]
+0a08: ff7604        push [bp+4]
+0a0b: 52            push dx
+0a0c: 50            push ax
+0a0d: e81d07        call 112d
+0a10: 894604        mov [bp+4], ax
+0a13: 895606        mov [bp+6], dx
+0a16: 09c2          or dx, ax
+0a18: 7506          jne 0a20
+0a1a: 837e0c01      cmp [bp+c], 1
+0a1e: 7e17          jle 0a37
+0a20: 8b560c        mov dx, [bp+c]
+0a23: 4a            dec dx
+0a24: 52            push dx
+0a25: 56            push si
+0a26: ff7608        push [bp+8]
+0a29: ff7606        push [bp+6]
+0a2c: ff7604        push [bp+4]
+0a2f: e8b6ff        call 09e8
+0a32: 83c40a        add sp, a
+0a35: 89c6          mov si, ax
+0a37: 83ff09        cmp di, 9
+0a3a: 7e07          jle 0a43
+0a3c: 89f8          mov ax, di
+0a3e: 2da9ff        sub ax, ffa9
+0a41: eb03          jmp short 0a46
+0a43: 8d4530        lea ax, [di+30]
+0a46: 8804          mov [si], al
+0a48: 8d4401        lea ax, [si+1]
+0a4b: e93307        jmp 1181
+0a4e: 55            push bp
+0a4f: 89e5          mov bp, sp
+0a51: 56            push si
+0a52: 8b361601      mov si, [0116]
+0a56: 4e            dec si
+0a57: 7c0c          jl 0a65
+0a59: 89f3          mov bx, si
+0a5b: d1e3          shl bx, 1
+0a5d: 8b9f4602      mov bx, [bx+246]
+0a61: ffd3          call bx
+0a63: ebf1          jmp short 0a56
+0a65: e91a07        jmp 1182
+0a68: 55            push bp
+0a69: 89e5          mov bp, sp
+0a6b: e8e0ff        call 0a4e
+0a6e: 833e180100    cmp [0118], 0
+0a73: 7406          je 0a7b
+0a75: 8b1e1801      mov bx, [0118]
+0a79: ffd3          call bx
+0a7b: ff7604        push [bp+4]
+0a7e: e8cc05        call 104d
+0a81: 5b            pop bx
+0a82: e9fe06        jmp 1183
+0a85: 55            push bp
+0a86: 89e5          mov bp, sp
+0a88: 56            push si
+0a89: 8b1e2a02      mov bx, [022a]
+0a8d: 035e04        add bx, [bp+4]
+0a90: 391e2a02      cmp [022a], bx
+0a94: 7717          jnbe 0aad
+0a96: 8b5604        mov dx, [bp+4]
+0a99: 03162a02      add dx, [022a]
+0a9d: 81c2ff03      add dx, 03ff
+0aa1: 81e200fc      and dx, fc00
+0aa5: 89d6          mov si, dx
+0aa7: 39162a02      cmp [022a], dx
+0aab: 760a          jbe 0ab7
+0aad: c7063a010c00  mov [013a], 000c
+0ab3: 31c0          xor ax, ax
+0ab5: eb28          jmp short 0adf
+0ab7: 56            push si
+0ab8: e8a302        call 0d5e
+0abb: 5b            pop bx
+0abc: 09c0          or ax, ax
+0abe: 7404          je 0ac4
+0ac0: 31c0          xor ax, ax
+0ac2: eb1b          jmp short 0adf
+0ac4: 8b1e2a02      mov bx, [022a]
+0ac8: 8977fe        mov [bx-2], si
+0acb: c744fe0000    mov [si-2], 0000
+0ad0: ff362a02      push [022a]
+0ad4: e8da01        call 0cb1
+0ad7: 5b            pop bx
+0ad8: 89362a02      mov [022a], si
+0adc: b80100        mov ax, 0001
+0adf: e9a006        jmp 1182
+0ae2: 55            push bp
+0ae3: 89e5          mov bp, sp
+0ae5: 83ec0c        sub sp, c
+0ae8: 56            push si
+0ae9: 57            push di
+0aea: 837e0400      cmp [bp+4], 0
+0aee: 7505          jne 0af5
+0af0: 31c0          xor ax, ax
+0af2: e9cd00        jmp 0bc2
+0af5: c746f40000    mov [bp-c], 0000
+0afa: 837ef402      cmp [bp-c], 2
+0afe: 7203          jb 0b03
+0b00: e9bd00        jmp 0bc0
+0b03: 8b5604        mov dx, [bp+4]
+0b06: 42            inc dx
+0b07: 81e2feff      and dx, fffe
+0b0b: 83c202        add dx, 2
+0b0e: 8956f6        mov [bp-a], dx
+0b11: 83fa04        cmp dx, 4
+0b14: 730b          jnb 0b21
+0b16: c7063a010c00  mov [013a], 000c
+0b1c: 31c0          xor ax, ax
+0b1e: e9a100        jmp 0bc2
+0b21: 833e280200    cmp [0228], 0
+0b26: 752d          jne 0b55
+0b28: b80400        mov ax, 0004
+0b2b: 50            push ax
+0b2c: e86a02        call 0d99
+0b2f: 5b            pop bx
+0b30: 89c6          mov si, ax
+0b32: 3dffff        cmp ax, ffff
+0b35: 7505          jne 0b3c
+0b37: 31c0          xor ax, ax
+0b39: e98600        jmp 0bc2
+0b3c: 89f2          mov dx, si
+0b3e: 42            inc dx
+0b3f: 81e2feff      and dx, fffe
+0b43: 89d6          mov si, dx
+0b45: 83c602        add si, 2
+0b48: 89362802      mov [0228], si
+0b4c: 89362a02      mov [022a], si
+0b50: c744fe0000    mov [si-2], 0000
+0b55: c746fe0000    mov [bp-2], 0000
+0b5a: 8b362c02      mov si, [022c]
+0b5e: 09f6          or si, si
+0b60: 744d          je 0baf
+0b62: 8b54fe        mov dx, [si-2]
+0b65: 8956fa        mov [bp-6], dx
+0b68: 8b56f6        mov dx, [bp-a]
+0b6b: 01f2          add dx, si
+0b6d: 89d7          mov di, dx
+0b6f: 397efa        cmp [bp-6], di
+0b72: 7234          jb 0ba8
+0b74: 39f7          cmp di, si
+0b76: 7630          jbe 0ba8
+0b78: 8d5d02        lea bx, [di+2]
+0b7b: 395efa        cmp [bp-6], bx
+0b7e: 760f          jbe 0b8f
+0b80: 8b56fa        mov dx, [bp-6]
+0b83: 8955fe        mov [di-2], dx
+0b86: 897cfe        mov [si-2], di
+0b89: 8b14          mov dx, [si]
+0b8b: 8915          mov [di], dx
+0b8d: 893c          mov [si], di
+0b8f: 837efe00      cmp [bp-2], 0
+0b93: 7409          je 0b9e
+0b95: 8b14          mov dx, [si]
+0b97: 8b5efe        mov bx, [bp-2]
+0b9a: 8917          mov [bx], dx
+0b9c: eb06          jmp short 0ba4
+0b9e: 8b14          mov dx, [si]
+0ba0: 89162c02      mov [022c], dx
+0ba4: 89f0          mov ax, si
+0ba6: eb1a          jmp short 0bc2
+0ba8: 8976fe        mov [bp-2], si
+0bab: 8b34          mov si, [si]
+0bad: ebaf          jmp short 0b5e
+0baf: ff76f6        push [bp-a]
+0bb2: e8d0fe        call 0a85
+0bb5: 5b            pop bx
+0bb6: 09c0          or ax, ax
+0bb8: 7406          je 0bc0
+0bba: ff46f4        inc [bp-c]
+0bbd: e93aff        jmp 0afa
+0bc0: 31c0          xor ax, ax
+0bc2: e9bc05        jmp 1181
+0bc5: 55            push bp
+0bc6: 89e5          mov bp, sp
+0bc8: 83ec0e        sub sp, e
+0bcb: 56            push si
+0bcc: 57            push di
+0bcd: 8b5604        mov dx, [bp+4]
+0bd0: 8956f6        mov [bp-a], dx
+0bd3: 09d2          or dx, dx
+0bd5: 750a          jne 0be1
+0bd7: ff7606        push [bp+6]
+0bda: e805ff        call 0ae2
+0bdd: 5b            pop bx
+0bde: e9cd00        jmp 0cae
+0be1: 837e0600      cmp [bp+6], 0
+0be5: 750c          jne 0bf3
+0be7: ff76f6        push [bp-a]
+0bea: e8c400        call 0cb1
+0bed: 5b            pop bx
+0bee: 31c0          xor ax, ax
+0bf0: e9bb00        jmp 0cae
+0bf3: 8b5606        mov dx, [bp+6]
+0bf6: 42            inc dx
+0bf7: 81e2feff      and dx, fffe
+0bfb: 83c202        add dx, 2
+0bfe: 8956f4        mov [bp-c], dx
+0c01: 8b5ef6        mov bx, [bp-a]
+0c04: 8b57fe        mov dx, [bx-2]
+0c07: 8956fa        mov [bp-6], dx
+0c0a: 2b56f6        sub dx, [bp-a]
+0c0d: 8956f2        mov [bp-e], dx
+0c10: c746fe0000    mov [bp-2], 0000
+0c15: 8b3e2c02      mov di, [022c]
+0c19: 09ff          or di, di
+0c1b: 743a          je 0c57
+0c1d: 397efa        cmp [bp-6], di
+0c20: 7235          jb 0c57
+0c22: 397efa        cmp [bp-6], di
+0c25: 7529          jne 0c50
+0c27: 8b5ef6        mov bx, [bp-a]
+0c2a: 8b55fe        mov dx, [di-2]
+0c2d: 8957fe        mov [bx-2], dx
+0c30: 837efe00      cmp [bp-2], 0
+0c34: 7409          je 0c3f
+0c36: 8b15          mov dx, [di]
+0c38: 8b5efe        mov bx, [bp-2]
+0c3b: 8917          mov [bx], dx
+0c3d: eb06          jmp short 0c45
+0c3f: 8b15          mov dx, [di]
+0c41: 89162c02      mov [022c], dx
+0c45: 8b5ef6        mov bx, [bp-a]
+0c48: 8b57fe        mov dx, [bx-2]
+0c4b: 8956fa        mov [bp-6], dx
+0c4e: eb07          jmp short 0c57
+0c50: 897efe        mov [bp-2], di
+0c53: 8b3d          mov di, [di]
+0c55: ebc2          jmp short 0c19
+0c57: 8b56f4        mov dx, [bp-c]
+0c5a: 0356f6        add dx, [bp-a]
+0c5d: 89d6          mov si, dx
+0c5f: 3976fa        cmp [bp-6], si
+0c62: 7223          jb 0c87
+0c64: 3976f6        cmp [bp-a], si
+0c67: 771e          jnbe 0c87
+0c69: 8d5c02        lea bx, [si+2]
+0c6c: 395efa        cmp [bp-6], bx
+0c6f: 7611          jbe 0c82
+0c71: 8b56fa        mov dx, [bp-6]
+0c74: 8954fe        mov [si-2], dx
+0c77: 8b5ef6        mov bx, [bp-a]
+0c7a: 8977fe        mov [bx-2], si
+0c7d: 56            push si
+0c7e: e83000        call 0cb1
+0c81: 5b            pop bx
+0c82: 8b46f6        mov ax, [bp-a]
+0c85: eb27          jmp short 0cae
+0c87: ff7606        push [bp+6]
+0c8a: e855fe        call 0ae2
+0c8d: 5b            pop bx
+0c8e: 89c6          mov si, ax
+0c90: 09c0          or ax, ax
+0c92: 7504          jne 0c98
+0c94: 31c0          xor ax, ax
+0c96: eb16          jmp short 0cae
+0c98: ff76f2        push [bp-e]
+0c9b: ff76f6        push [bp-a]
+0c9e: 56            push si
+0c9f: e8cb03        call 106d
+0ca2: 83c406        add sp, 6
+0ca5: ff76f6        push [bp-a]
+0ca8: e80600        call 0cb1
+0cab: 5b            pop bx
+0cac: 89f0          mov ax, si
+0cae: e9d004        jmp 1181
+0cb1: 55            push bp
+0cb2: 89e5          mov bp, sp
+0cb4: 83ec06        sub sp, 6
+0cb7: 56            push si
+0cb8: 57            push di
+0cb9: 8b5604        mov dx, [bp+4]
+0cbc: 8956fa        mov [bp-6], dx
+0cbf: 09d2          or dx, dx
+0cc1: 7461          je 0d24
+0cc3: 31ff          xor di, di
+0cc5: 8b362c02      mov si, [022c]
+0cc9: 09f6          or si, si
+0ccb: 740b          je 0cd8
+0ccd: 3976fa        cmp [bp-6], si
+0cd0: 7206          jb 0cd8
+0cd2: 89f7          mov di, si
+0cd4: 8b34          mov si, [si]
+0cd6: ebf1          jmp short 0cc9
+0cd8: 8b5efa        mov bx, [bp-6]
+0cdb: 8937          mov [bx], si
+0cdd: 09ff          or di, di
+0cdf: 7407          je 0ce8
+0ce1: 8b56fa        mov dx, [bp-6]
+0ce4: 8915          mov [di], dx
+0ce6: eb07          jmp short 0cef
+0ce8: 8b56fa        mov dx, [bp-6]
+0ceb: 89162c02      mov [022c], dx
+0cef: 09f6          or si, si
+0cf1: 7415          je 0d08
+0cf3: 8b5efa        mov bx, [bp-6]
+0cf6: 3977fe        cmp [bx-2], si
+0cf9: 750d          jne 0d08
+0cfb: 8b54fe        mov dx, [si-2]
+0cfe: 8957fe        mov [bx-2], dx
+0d01: 8b14          mov dx, [si]
+0d03: 8b5efa        mov bx, [bp-6]
+0d06: 8917          mov [bx], dx
+0d08: 09ff          or di, di
+0d0a: 7418          je 0d24
+0d0c: 8b56fa        mov dx, [bp-6]
+0d0f: 3955fe        cmp [di-2], dx
+0d12: 7510          jne 0d24
+0d14: 8b5efa        mov bx, [bp-6]
+0d17: 8b57fe        mov dx, [bx-2]
+0d1a: 8955fe        mov [di-2], dx
+0d1d: 8b5efa        mov bx, [bp-6]
+0d20: 8b17          mov dx, [bx]
+0d22: 8915          mov [di], dx
+0d24: e95a04        jmp 1181
+0d27: 55            push bp
+0d28: 89e5          mov bp, sp
+0d2a: 8b5604        mov dx, [bp+4]
+0d2d: 83ea61        sub dx, 61
+0d30: 83fa1a        cmp dx, 1a
+0d33: 7308          jnb 0d3d
+0d35: 8b4604        mov ax, [bp+4]
+0d38: 2d2000        sub ax, 0020
+0d3b: eb03          jmp short 0d40
+0d3d: 8b4604        mov ax, [bp+4]
+0d40: e94004        jmp 1183
+0d43: 55            push bp
+0d44: 89e5          mov bp, sp
+0d46: b81c01        mov ax, 011c
+0d49: 50            push ax
+0d4a: b83a00        mov ax, 003a
+0d4d: 50            push ax
+0d4e: e8df02        call 1030
+0d51: 5b            pop bx
+0d52: 5b            pop bx
+0d53: b80100        mov ax, 0001
+0d56: 50            push ax
+0d57: e80efd        call 0a68
+0d5a: 5b            pop bx
+0d5b: e92504        jmp 1183
+0d5e: 55            push bp
+0d5f: 89e5          mov bp, sp
+0d61: 83ec18        sub sp, 18
+0d64: 8b163c01      mov dx, [013c]
+0d68: 395604        cmp [bp+4], dx
+0d6b: 7427          je 0d94
+0d6d: 8b5604        mov dx, [bp+4]
+0d70: 8956f2        mov [bp-e], dx
+0d73: 8d46e8        lea ax, [bp-18]
+0d76: 50            push ax
+0d77: b81100        mov ax, 0011
+0d7a: 50            push ax
+0d7b: 31c0          xor ax, ax
+0d7d: 50            push ax
+0d7e: e85600        call 0dd7
+0d81: 83c406        add sp, 6
+0d84: 09c0          or ax, ax
+0d86: 7d05          jnl 0d8d
+0d88: b8ffff        mov ax, ffff
+0d8b: eb09          jmp short 0d96
+0d8d: 8b56fa        mov dx, [bp-6]
+0d90: 89163c01      mov [013c], dx
+0d94: 31c0          xor ax, ax
+0d96: e9ea03        jmp 1183
+0d99: 55            push bp
+0d9a: 89e5          mov bp, sp
+0d9c: 56            push si
+0d9d: 57            push di
+0d9e: 8b363c01      mov si, [013c]
+0da2: 8b5604        mov dx, [bp+4]
+0da5: 03163c01      add dx, [013c]
+0da9: 89d7          mov di, dx
+0dab: 837e0400      cmp [bp+4], 0
+0daf: 7e04          jle 0db5
+0db1: 39f7          cmp di, si
+0db3: 720a          jb 0dbf
+0db5: 837e0400      cmp [bp+4], 0
+0db9: 7d09          jnl 0dc4
+0dbb: 39f7          cmp di, si
+0dbd: 7605          jbe 0dc4
+0dbf: b8ffff        mov ax, ffff
+0dc2: eb10          jmp short 0dd4
+0dc4: 57            push di
+0dc5: e896ff        call 0d5e
+0dc8: 5b            pop bx
+0dc9: 09c0          or ax, ax
+0dcb: 7504          jne 0dd1
+0dcd: 89f0          mov ax, si
+0dcf: eb03          jmp short 0dd4
+0dd1: b8ffff        mov ax, ffff
+0dd4: e9aa03        jmp 1181
+0dd7: 55            push bp
+0dd8: 89e5          mov bp, sp
+0dda: 56            push si
+0ddb: 57            push di
+0ddc: 8b7608        mov si, [bp+8]
+0ddf: 8b5606        mov dx, [bp+6]
+0de2: 895402        mov [si+2], dx
+0de5: 56            push si
+0de6: ff7604        push [bp+4]
+0de9: e86f02        call 105b
+0dec: 5b            pop bx
+0ded: 5b            pop bx
+0dee: 89c7          mov di, ax
+0df0: 09ff          or di, di
+0df2: 7403          je 0df7
+0df4: 897c02        mov [si+2], di
+0df7: 837c0200      cmp [si+2], 0
+0dfb: 7d0e          jnl 0e0b
+0dfd: 8b5402        mov dx, [si+2]
+0e00: f7da          neg dx
+0e02: 89163a01      mov [013a], dx
+0e06: b8ffff        mov ax, ffff
+0e09: eb03          jmp short 0e0e
+0e0b: 8b4402        mov ax, [si+2]
+0e0e: e97003        jmp 1181
+0e11: 55            push bp
+0e12: 89e5          mov bp, sp
+0e14: 83ec20        sub sp, 20
+0e17: 8d46e0        lea ax, [bp-20]
+0e1a: 50            push ax
+0e1b: ff7604        push [bp+4]
+0e1e: e85700        call 0e78
+0e21: 5b            pop bx
+0e22: 5b            pop bx
+0e23: 31db          xor bx, bx
+0e25: 09c0          or ax, ax
+0e27: 7501          jne 0e2a
+0e29: 43            inc bx
+0e2a: 89d8          mov ax, bx
+0e2c: e95403        jmp 1183
+0e2f: 55            push bp
+0e30: 89e5          mov bp, sp
+0e32: 83ec18        sub sp, 18
+0e35: 8b5604        mov dx, [bp+4]
+0e38: 8956ec        mov [bp-14], dx
+0e3b: 8b5606        mov dx, [bp+6]
+0e3e: 8b4e08        mov cx, [bp+8]
+0e41: 8956f2        mov [bp-e], dx
+0e44: 894ef4        mov [bp-c], cx
+0e47: 8b560a        mov dx, [bp+a]
+0e4a: 8956ee        mov [bp-12], dx
+0e4d: 8d46e8        lea ax, [bp-18]
+0e50: 50            push ax
+0e51: b81300        mov ax, 0013
+0e54: 50            push ax
+0e55: b80100        mov ax, 0001
+0e58: 50            push ax
+0e59: e87bff        call 0dd7
+0e5c: 83c406        add sp, 6
+0e5f: 09c0          or ax, ax
+0e61: 7d0a          jnl 0e6d
+0e63: b8ffff        mov ax, ffff
+0e66: 50            push ax
+0e67: b8ffff        mov ax, ffff
+0e6a: 50            push ax
+0e6b: eb06          jmp short 0e73
+0e6d: ff76f4        push [bp-c]
+0e70: ff76f2        push [bp-e]
+0e73: 58            pop ax
+0e74: 5a            pop dx
+0e75: e90b03        jmp 1183
+0e78: 55            push bp
+0e79: 89e5          mov bp, sp
+0e7b: ff7606        push [bp+6]
+0e7e: b80854        mov ax, 5408
+0e81: 50            push ax
+0e82: ff7604        push [bp+4]
+0e85: e81602        call 109e
+0e88: 83c406        add sp, 6
+0e8b: e9f502        jmp 1183
+0e8e: 55            push bp
+0e8f: 89e5          mov bp, sp
+0e91: 83ec18        sub sp, 18
+0e94: 8b5604        mov dx, [bp+4]
+0e97: 8956ec        mov [bp-14], dx
+0e9a: 8b5608        mov dx, [bp+8]
+0e9d: 8956ee        mov [bp-12], dx
+0ea0: 8b5606        mov dx, [bp+6]
+0ea3: 8956f2        mov [bp-e], dx
+0ea6: 8d46e8        lea ax, [bp-18]
+0ea9: 50            push ax
+0eaa: b80400        mov ax, 0004
+0ead: 50            push ax
+0eae: b80100        mov ax, 0001
+0eb1: 50            push ax
+0eb2: e822ff        call 0dd7
+0eb5: 83c406        add sp, 6
+0eb8: e9c802        jmp 1183
+0ebb: 55            push bp
+0ebc: 89e5          mov bp, sp
+0ebe: 83ec0a        sub sp, a
+0ec1: 56            push si
+0ec2: 57            push di
+0ec3: 8b7604        mov si, [bp+4]
+0ec6: c746f80000    mov [bp-8], 0000
+0ecb: 09f6          or si, si
+0ecd: 7530          jne 0eff
+0ecf: 31ff          xor di, di
+0ed1: 83ff14        cmp di, 14
+0ed4: 7d23          jnl 0ef9
+0ed6: 89fb          mov bx, di
+0ed8: d1e3          shl bx, 1
+0eda: 83bf460000    cmp [bx+46], 0
+0edf: 7415          je 0ef6
+0ee1: 89fb          mov bx, di
+0ee3: d1e3          shl bx, 1
+0ee5: ffb74600      push [bx+46]
+0ee9: e8cfff        call 0ebb
+0eec: 5b            pop bx
+0eed: 09c0          or ax, ax
+0eef: 7405          je 0ef6
+0ef1: c746f8ffff    mov [bp-8], ffff
+0ef6: 47            inc di
+0ef7: ebd8          jmp short 0ed1
+0ef9: 8b46f8        mov ax, [bp-8]
+0efc: e9f700        jmp 0ff6
+0eff: 837c0800      cmp [si+8], 0
+0f03: 740d          je 0f12
+0f05: f6440480      test byte [si+4], 80
+0f09: 750c          jne 0f17
+0f0b: f744040001    test [si+4], 0100
+0f10: 7505          jne 0f17
+0f12: 31c0          xor ax, ax
+0f14: e9df00        jmp 0ff6
+0f17: f6440480      test byte [si+4], 80
+0f1b: 7457          je 0f74
+0f1d: c746f60000    mov [bp-a], 0000
+0f22: 837c0800      cmp [si+8], 0
+0f26: 740d          je 0f35
+0f28: f6440404      test byte [si+4], 4
+0f2c: 7507          jne 0f35
+0f2e: 8b14          mov dx, [si]
+0f30: f7da          neg dx
+0f32: 8956f6        mov [bp-a], dx
+0f35: c7040000      mov [si], 0000
+0f39: 8b46f6        mov ax, [bp-a]
+0f3c: 99            cwd
+0f3d: bb0100        mov bx, 0001
+0f40: 53            push bx
+0f41: 52            push dx
+0f42: 50            push ax
+0f43: ff7402        push [si+2]
+0f46: e8e6fe        call 0e2f
+0f49: 83c408        add sp, 8
+0f4c: 21c2          and dx, ax
+0f4e: 83faff        cmp dx, -1
+0f51: 750b          jne 0f5e
+0f53: 814c042000    or [si+4], 0020
+0f58: b8ffff        mov ax, ffff
+0f5b: e99800        jmp 0ff6
+0f5e: f6440402      test byte [si+4], 2
+0f62: 7405          je 0f69
+0f64: 8164047ffe    and [si+4], fe7f
+0f69: 8b5408        mov dx, [si+8]
+0f6c: 89540a        mov [si+a], dx
+0f6f: 31c0          xor ax, ax
+0f71: e98200        jmp 0ff6
+0f74: f6440404      test byte [si+4], 4
+0f78: 7405          je 0f7f
+0f7a: 31c0          xor ax, ax
+0f7c: e97700        jmp 0ff6
+0f7f: f6440401      test byte [si+4], 1
+0f83: 7405          je 0f8a
+0f85: 816404fffe    and [si+4], feff
+0f8a: 8b540a        mov dx, [si+a]
+0f8d: 2b5408        sub dx, [si+8]
+0f90: 8956fe        mov [bp-2], dx
+0f93: 8b5408        mov dx, [si+8]
+0f96: 89540a        mov [si+a], dx
+0f99: 837efe00      cmp [bp-2], 0
+0f9d: 7f04          jnle 0fa3
+0f9f: 31c0          xor ax, ax
+0fa1: eb53          jmp short 0ff6
+0fa3: f744040002    test [si+4], 0200
+0fa8: 7422          je 0fcc
+0faa: 31c0          xor ax, ax
+0fac: bb0200        mov bx, 0002
+0faf: 53            push bx
+0fb0: 50            push ax
+0fb1: 50            push ax
+0fb2: ff7402        push [si+2]
+0fb5: e877fe        call 0e2f
+0fb8: 83c408        add sp, 8
+0fbb: 21c2          and dx, ax
+0fbd: 83faff        cmp dx, -1
+0fc0: 750a          jne 0fcc
+0fc2: 814c042000    or [si+4], 0020
+0fc7: b8ffff        mov ax, ffff
+0fca: eb2a          jmp short 0ff6
+0fcc: ff76fe        push [bp-2]
+0fcf: ff7408        push [si+8]
+0fd2: ff7402        push [si+2]
+0fd5: e8b6fe        call 0e8e
+0fd8: 83c406        add sp, 6
+0fdb: 8946fc        mov [bp-4], ax
+0fde: c7040000      mov [si], 0000
+0fe2: 8b56fc        mov dx, [bp-4]
+0fe5: 3956fe        cmp [bp-2], dx
+0fe8: 7504          jne 0fee
+0fea: 31c0          xor ax, ax
+0fec: eb08          jmp short 0ff6
+0fee: 814c042000    or [si+4], 0020
+0ff3: b8ffff        mov ax, ffff
+0ff6: e98801        jmp 1181
+0ff9: 55            push bp
+0ffa: 89e5          mov bp, sp
+0ffc: 56            push si
+0ffd: 31f6          xor si, si
+0fff: 83fe14        cmp si, 14
+1002: 7d29          jnl 102d
+1004: 89f3          mov bx, si
+1006: d1e3          shl bx, 1
+1008: 83bf460000    cmp [bx+46], 0
+100d: 741b          je 102a
+100f: 89f3          mov bx, si
+1011: d1e3          shl bx, 1
+1013: 8b9f4600      mov bx, [bx+46]
+1017: f747040001    test [bx+4], 0100
+101c: 740c          je 102a
+101e: 89f3          mov bx, si
+1020: d1e3          shl bx, 1
+1022: ffb74600      push [bx+46]
+1026: e892fe        call 0ebb
+1029: 5b            pop bx
+102a: 46            inc si
+102b: ebd2          jmp short 0fff
+102d: e95201        jmp 1182
+1030: 55            push bp
+1031: 89e5          mov bp, sp
+1033: 50            push ax
+1034: 50            push ax
+1035: 8d5e08        lea bx, [bp+8]
+1038: 895efe        mov [bp-2], bx
+103b: ff7604        push [bp+4]
+103e: ff76fe        push [bp-2]
+1041: ff7606        push [bp+6]
+1044: e8e4f1        call 022b
+1047: 83c406        add sp, 6
+104a: e93601        jmp 1183
+104d: e92e00        jmp 107e
+1050: 00b90100      add [bx+di+1], bh
+1054: eb0a          jmp short 1060
+1056: b90200        mov cx, 0002
+1059: eb05          jmp short 1060
+105b: b90300        mov cx, 0003
+105e: eb00          jmp short 1060
+1060: 55            push bp
+1061: 89e5          mov bp, sp
+1063: 8b4604        mov ax, [bp+4]
+1066: 8b5e06        mov bx, [bp+6]
+1069: cd20          int 20
+106b: 5d            pop bp
+106c: c3            ret
+106d: 55            push bp
+106e: 89e5          mov bp, sp
+1070: 56            push si
+1071: 57            push di
+1072: 8b7e04        mov di, [bp+4]
+1075: 8b7606        mov si, [bp+6]
+1078: 8b4e08        mov cx, [bp+8]
+107b: e96300        jmp 10e1
+107e: 55            push bp
+107f: 89e5          mov bp, sp
+1081: 83ec18        sub sp, 18
+1084: 8b5604        mov dx, [bp+4]
+1087: 8956ec        mov [bp-14], dx
+108a: 8d46e8        lea ax, [bp-18]
+108d: 50            push ax
+108e: b80100        mov ax, 0001
+1091: 50            push ax
+1092: 31c0          xor ax, ax
+1094: 50            push ax
+1095: e83ffd        call 0dd7
+1098: 83c406        add sp, 6
+109b: e9e500        jmp 1183
+109e: 55            push bp
+109f: 89e5          mov bp, sp
+10a1: 83ec18        sub sp, 18
+10a4: 8b5604        mov dx, [bp+4]
+10a7: 8956ec        mov [bp-14], dx
+10aa: 8b5606        mov dx, [bp+6]
+10ad: 8956f0        mov [bp-10], dx
+10b0: 8b5608        mov dx, [bp+8]
+10b3: 8956fa        mov [bp-6], dx
+10b6: 8d46e8        lea ax, [bp-18]
+10b9: 50            push ax
+10ba: b83600        mov ax, 0036
+10bd: 50            push ax
+10be: b80100        mov ax, 0001
+10c1: 50            push ax
+10c2: e812fd        call 0dd7
+10c5: 83c406        add sp, 6
+10c8: e9b800        jmp 1183
+10cb: 55            push bp
+10cc: 89e5          mov bp, sp
+10ce: 56            push si
+10cf: 57            push di
+10d0: 8b7e04        mov di, [bp+4]
+10d3: 8b7606        mov si, [bp+6]
+10d6: 8b4e08        mov cx, [bp+8]
+10d9: 89f8          mov ax, di
+10db: 29f0          sub ax, si
+10dd: 39c8          cmp ax, cx
+10df: 721d          jb 10fe
+10e1: fc            cld
+10e2: 83f910        cmp cx, 10
+10e5: 720e          jb 10f5
+10e7: 89f0          mov ax, si
+10e9: 09f8          or ax, di
+10eb: a801          test al, 1
+10ed: 7506          jne 10f5
+10ef: d1e9          shr cx, 1
+10f1: f2a5          rep movsw
+10f3: 11c9          adc cx, cx
+10f5: f2a4          rep movsb
+10f7: 8b4604        mov ax, [bp+4]
+10fa: 5f            pop di
+10fb: 5e            pop si
+10fc: 5d            pop bp
+10fd: c3            ret
+10fe: fd            std
+10ff: 01ce          add si, cx
+1101: 4e            dec si
+1102: 01cf          add di, cx
+1104: 4f            dec di
+1105: f2a4          rep movsb
+1107: fc            cld
+1108: ebed          jmp short 10f7
+110a: 8b17          mov dx, [bx]
+110c: 8b4f02        mov cx, [bx+2]
+110f: 83c304        add bx, 4
+1112: 49            dec cx
+1113: 7c14          jl 1129
+1115: 3b07          cmp ax, [bx]
+1117: 75f6          jne 110f
+1119: 8b5f02        mov bx, [bx+2]
+111c: 85db          test bx, bx
+111e: 7507          jne 1127
+1120: b81400        mov ax, 0014
+1123: 50            push ax
+1124: e95400        jmp 117b
+1127: ffe3          jmp bx
+1129: 89d3          mov bx, dx
+112b: ebef          jmp short 111c
+112d: 56            push si
+112e: 57            push di
+112f: 89e6          mov si, sp
+1131: 8b5c06        mov bx, [si+6]
+1134: 8b4408        mov ax, [si+8]
+1137: 09c0          or ax, ax
+1139: 7514          jne 114f
+113b: 31d2          xor dx, dx
+113d: 8b4c0a        mov cx, [si+a]
+1140: 8b440c        mov ax, [si+c]
+1143: f7f3          div bx
+1145: 91            xchg cx, ax
+1146: f7f3          div bx
+1148: 89ca          mov dx, cx
+114a: 5f            pop di
+114b: 5e            pop si
+114c: c20800        ret 0008
+114f: 89c7          mov di, ax
+1151: 31db          xor bx, bx
+1153: 8b440a        mov ax, [si+a]
+1156: 8b540c        mov dx, [si+c]
+1159: b91000        mov cx, 0010
+115c: d1e0          shl ax, 1
+115e: d1d2          rcl dx, 1
+1160: d1d3          rcl bx, 1
+1162: 39df          cmp di, bx
+1164: 7707          jnbe 116d
+1166: 7209          jb 1171
+1168: 395406        cmp [si+6], dx
+116b: 7604          jbe 1171
+116d: e2ed          loop 115c
+116f: ebd7          jmp short 1148
+1171: 2b5406        sub dx, [si+6]
+1174: 19fb          sbb bx, di
+1176: 40            inc ax
+1177: e2e3          loop 115c
+1179: ebcd          jmp short 1148
+117b: e8b800        call 1236
+117e: e85c00        call 11dd
+1181: 5f            pop di
+1182: 5e            pop si
+1183: 89ec          mov sp, bp
+1185: 5d            pop bp
+1186: c3            ret
+1187: 5e            pop si
+1188: 5f            pop di
+1189: ebf8          jmp short 1183
+118b: 56            push si
+118c: 57            push di
+118d: 89e6          mov si, sp
+118f: 8b5c06        mov bx, [si+6]
+1192: 8b4408        mov ax, [si+8]
+1195: 09c0          or ax, ax
+1197: 7518          jne 11b1
+1199: 31d2          xor dx, dx
+119b: 8b4c0a        mov cx, [si+a]
+119e: 8b440c        mov ax, [si+c]
+11a1: f7f3          div bx
+11a3: 91            xchg cx, ax
+11a4: f7f3          div bx
+11a6: 31db          xor bx, bx
+11a8: 89d0          mov ax, dx
+11aa: 89da          mov dx, bx
+11ac: 5f            pop di
+11ad: 5e            pop si
+11ae: c20800        ret 0008
+11b1: 89c7          mov di, ax
+11b3: 31db          xor bx, bx
+11b5: 8b440a        mov ax, [si+a]
+11b8: 8b540c        mov dx, [si+c]
+11bb: b91000        mov cx, 0010
+11be: d1e0          shl ax, 1
+11c0: d1d2          rcl dx, 1
+11c2: d1d3          rcl bx, 1
+11c4: 39df          cmp di, bx
+11c6: 7707          jnbe 11cf
+11c8: 7209          jb 11d3
+11ca: 395406        cmp [si+6], dx
+11cd: 7604          jbe 11d3
+11cf: e2ed          loop 11be
+11d1: ebd5          jmp short 11a8
+11d3: 2b5406        sub dx, [si+6]
+11d6: 19fb          sbb bx, di
+11d8: 40            inc ax
+11d9: e2e3          loop 11be
+11db: ebcb          jmp short 11a8
+11dd: e86dfe        call 104d
+11e0: b80600        mov ax, 0006
+11e3: ba6801        mov dx, 0168
+11e6: eb30          jmp short 1218
+11e8: b81200        mov ax, 0012
+11eb: ba7f01        mov dx, 017f
+11ee: eb28          jmp short 1218
+11f0: b81400        mov ax, 0014
+11f3: ba9601        mov dx, 0196
+11f6: eb20          jmp short 1218
+11f8: b80100        mov ax, 0001
+11fb: baad01        mov dx, 01ad
+11fe: eb18          jmp short 1218
+1200: b80200        mov ax, 0002
+1203: bac401        mov dx, 01c4
+1206: eb10          jmp short 1218
+1208: b81200        mov ax, 0012
+120b: badb01        mov dx, 01db
+120e: eb08          jmp short 1218
+1210: b81100        mov ax, 0011
+1213: baf201        mov dx, 01f2
+1216: eb00          jmp short 1218
+1218: 31db          xor bx, bx
+121a: 871e2602      xchg [0226], bx
+121e: 85db          test bx, bx
+1220: 7405          je 1227
+1222: 50            push ax
+1223: ffd3          call bx
+1225: 58            pop ax
+1226: c3            ret
+1227: bb1600        mov bx, 0016
+122a: 53            push bx
+122b: 52            push dx
+122c: b80200        mov ax, 0002
+122f: 50            push ax
+1230: e83b00        call 126e
+1233: e817fe        call 104d
+1236: 89c2          mov dx, ax
+1238: 83fa15        cmp dx, 15
+123b: 7311          jnb 124e
+123d: d1e2          shl dx, 1
+123f: bb3e01        mov bx, 013e
+1242: 01d3          add bx, dx
+1244: 8b1f          mov bx, [bx]
+1246: 85db          test bx, bx
+1248: 7404          je 124e
+124a: 89da          mov dx, bx
+124c: eb1e          jmp short 126c
+124e: bb1702        mov bx, 0217
+1251: b90600        mov cx, 0006
+1254: 89c2          mov dx, ax
+1256: 81e20700      and dx, 0007
+125a: 03163000      add dx, [0030]
+125e: 8817          mov [bx], dl
+1260: 4b            dec bx
+1261: d1fa          sar dx, 1
+1263: d1fa          sar dx, 1
+1265: d1fa          sar dx, 1
+1267: e2ed          loop 1256
+1269: ba0902        mov dx, 0209
+126c: ebaa          jmp short 1218
+126e: 55            push bp
+126f: 89e5          mov bp, sp
+1271: c70630020400  mov [0230], 0004
+1277: 8b5e04        mov bx, [bp+4]
+127a: 891e3202      mov [0232], bx
+127e: 8b5e08        mov bx, [bp+8]
+1281: 891e3402      mov [0234], bx
+1285: 8b5e06        mov bx, [bp+6]
+1288: 891e3802      mov [0238], bx
+128c: b82e02        mov ax, 022e
+128f: 50            push ax
+1290: b80100        mov ax, 0001
+1293: 50            push ax
+1294: b80100        mov ax, 0001
+1297: bb2e02        mov bx, 022e
+129a: b90300        mov cx, 0003
+129d: cd20          int 20
+129f: 89ec          mov sp, bp
+12a1: 5d            pop bp
+12a2: c3            ret
+12a3: 0000          add [bx+si], al
+12a5: 0000          add [bx+si], al
+12a7: 0000          add [bx+si], al
+12a9: 0000          add [bx+si], al
+12ab: 0000          add [bx+si], al
+12ad: 0000          add [bx+si], al
+12af: 00            (undefined)
