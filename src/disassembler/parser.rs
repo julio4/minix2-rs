@@ -233,6 +233,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
             Ok((IR::Lea { dest, src }, bytes_consumed + 1))
         }
+        0x98 => Ok((IR::Cbw, 1)),
         // MOV imm, reg
         0xb0..=0xbf => {
             let w = (opcode & 0b00001000) != 0;
@@ -1211,6 +1212,13 @@ mod tests {
             ),
             bytes.len(),
         );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_cbw() {
+        let bytes = [0x98];
+        let expected_result = (Instruction::new(IR::Cbw, bytes.to_vec()), bytes.len());
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
