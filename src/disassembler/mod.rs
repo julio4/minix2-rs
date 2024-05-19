@@ -31,7 +31,7 @@ pub fn minix2_disassemble(args: Vec<String>) -> Result<String, ParseError> {
     let text_segment = super::TextSegment::parse(&binary, header.text)?;
 
     // Parse instructions from text segment
-    let program = Program::from_text_segment(text_segment);
+    let program = Program::from_text_segment(text_segment)?;
 
     // return mmvm -d disassembly output
     Ok(format!("{}", program))

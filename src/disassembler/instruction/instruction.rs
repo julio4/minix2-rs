@@ -52,6 +52,9 @@ pub enum IR {
     In { dest: Operand, src: Operand },
     Neg { dest: Operand },
     Cbw,
+    Cwd,
+    Inc { dest: Operand },
+    Mul { dest: Operand },
     Undefined,
 }
 
@@ -116,6 +119,9 @@ impl std::fmt::Display for IR {
             IR::In { dest, src } => write!(f, "in {}, {}", dest, src),
             IR::Neg { dest } => write!(f, "neg {}", dest),
             IR::Cbw => write!(f, "cbw"),
+            IR::Cwd => write!(f, "cwd"),
+            IR::Inc { dest } => write!(f, "inc {}", dest),
+            IR::Mul { dest } => write!(f, "mul {}", dest),
             IR::Undefined => write!(f, "(undefined)"),
         }
     }
