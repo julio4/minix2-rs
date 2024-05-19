@@ -67,7 +67,7 @@ impl std::fmt::Display for IR {
             }
             IR::Add { dest, src } => write!(f, "add {}, {}", dest, src),
             IR::Sub { dest, src } => write!(f, "sub {}, {}", dest, src),
-            IR::Ssb { dest, src } => write!(f, "ssb {}, {}", dest, src),
+            IR::Ssb { dest, src } => write!(f, "sbb {}, {}", dest, src),
             IR::Cmp { dest, src } => write!(f, "cmp {}, {}", dest, src),
             IR::And { dest, src } => write!(f, "and {}, {}", dest, src),
             IR::Or { dest, src } => write!(f, "or {}, {}", dest, src),
