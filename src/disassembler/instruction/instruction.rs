@@ -176,6 +176,7 @@ pub enum IR {
     Mul {
         dest: Operand,
     },
+    Cld,
     Undefined,
 }
 
@@ -275,6 +276,7 @@ impl std::fmt::Display for IR {
             IR::Cwd => write!(f, "cwd"),
             IR::Inc { dest } => write!(f, "inc {}", dest),
             IR::Mul { dest } => write!(f, "mul {}", dest),
+            IR::Cld => write!(f, "cld"),
             IR::Undefined => write!(f, "(undefined)"),
         }
     }
