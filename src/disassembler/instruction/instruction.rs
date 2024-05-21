@@ -14,6 +14,10 @@ pub enum IR {
         dest: Operand,
         src: Operand,
     },
+    Adc {
+        dest: Operand,
+        src: Operand,
+    },
     Sub {
         dest: Operand,
         src: Operand,
@@ -177,6 +181,14 @@ pub enum IR {
         dest: Operand,
     },
     Cld,
+    Std,
+    Movs {
+        word: bool,
+    },
+    Rep {
+        z: bool,
+        string_ir: Box<IR>,
+    },
     Undefined,
 }
 
@@ -208,6 +220,7 @@ impl std::fmt::Display for IR {
                 }
             }
             IR::Add { dest, src } => write!(f, "add {}, {}", dest, src),
+            IR::Adc { dest, src } => write!(f, "adc {}, {}", dest, src),
             IR::Sub { dest, src } => write!(f, "sub {}, {}", dest, src),
             IR::Ssb { dest, src } => write!(f, "sbb {}, {}", dest, src),
             IR::Cmp { dest, src } => write!(f, "cmp {}, {}", dest, src),
@@ -277,6 +290,9 @@ impl std::fmt::Display for IR {
             IR::Inc { dest } => write!(f, "inc {}", dest),
             IR::Mul { dest } => write!(f, "mul {}", dest),
             IR::Cld => write!(f, "cld"),
+            IR::Std => write!(f, "std"),
+            IR::Rep { z: _, string_ir } => write!(f, "rep {}", string_ir),
+            IR::Movs { word } => write!(f, "movs{}", if *word { "w" } else { "b" }),
             IR::Undefined => write!(f, "(undefined)"),
         }
     }
