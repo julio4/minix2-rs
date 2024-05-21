@@ -2,66 +2,203 @@ use crate::disassembler::instruction::Operand;
 
 #[derive(Debug, PartialEq)]
 pub enum IR {
-    Mov { dest: Operand, src: Operand },
-    Int { int_type: u8 },
-    Add { dest: Operand, src: Operand },
-    Sub { dest: Operand, src: Operand },
-    Ssb { dest: Operand, src: Operand },
-    Cmp { dest: Operand, src: Operand },
-    And { dest: Operand, src: Operand },
-    Or { dest: Operand, src: Operand },
-    Xor { dest: Operand, src: Operand },
-    Lea { dest: Operand, src: Operand },
-    Lds { dest: Operand, src: Operand },
-    Les { dest: Operand, src: Operand },
-    Je { dest: Operand },
-    Jl { dest: Operand },
-    Jle { dest: Operand },
-    Jb { dest: Operand },
-    Jbe { dest: Operand },
-    Jp { dest: Operand },
-    Jo { dest: Operand },
-    Js { dest: Operand },
-    Jne { dest: Operand },
-    Jnl { dest: Operand },
-    Jnle { dest: Operand },
-    Jnb { dest: Operand },
-    Jnbe { dest: Operand },
-    Jnp { dest: Operand },
-    Jno { dest: Operand },
-    Jns { dest: Operand },
-    Loop { dest: Operand },
-    Loopz { dest: Operand },
-    Loopnz { dest: Operand },
-    Jcxz { dest: Operand },
-    Jmp { dest: Operand, short: bool },
-    Test { dest: Operand, src: Operand },
-    Push { src: Operand },
-    Call { dest: Operand },
+    Mov {
+        dest: Operand,
+        src: Operand,
+        byte: bool,
+    },
+    Int {
+        int_type: u8,
+    },
+    Add {
+        dest: Operand,
+        src: Operand,
+    },
+    Sub {
+        dest: Operand,
+        src: Operand,
+    },
+    Ssb {
+        dest: Operand,
+        src: Operand,
+    },
+    Cmp {
+        dest: Operand,
+        src: Operand,
+    },
+    And {
+        dest: Operand,
+        src: Operand,
+    },
+    Or {
+        dest: Operand,
+        src: Operand,
+    },
+    Xor {
+        dest: Operand,
+        src: Operand,
+    },
+    Lea {
+        dest: Operand,
+        src: Operand,
+    },
+    Lds {
+        dest: Operand,
+        src: Operand,
+    },
+    Les {
+        dest: Operand,
+        src: Operand,
+    },
+    Je {
+        dest: Operand,
+    },
+    Jl {
+        dest: Operand,
+    },
+    Jle {
+        dest: Operand,
+    },
+    Jb {
+        dest: Operand,
+    },
+    Jbe {
+        dest: Operand,
+    },
+    Jp {
+        dest: Operand,
+    },
+    Jo {
+        dest: Operand,
+    },
+    Js {
+        dest: Operand,
+    },
+    Jne {
+        dest: Operand,
+    },
+    Jnl {
+        dest: Operand,
+    },
+    Jnle {
+        dest: Operand,
+    },
+    Jnb {
+        dest: Operand,
+    },
+    Jnbe {
+        dest: Operand,
+    },
+    Jnp {
+        dest: Operand,
+    },
+    Jno {
+        dest: Operand,
+    },
+    Jns {
+        dest: Operand,
+    },
+    Loop {
+        dest: Operand,
+    },
+    Loopz {
+        dest: Operand,
+    },
+    Loopnz {
+        dest: Operand,
+    },
+    Jcxz {
+        dest: Operand,
+    },
+    Jmp {
+        dest: Operand,
+        short: bool,
+    },
+    Test {
+        dest: Operand,
+        src: Operand,
+        byte: bool,
+    },
+    Push {
+        src: Operand,
+    },
+    Call {
+        dest: Operand,
+    },
     Hlt,
-    Dec { dest: Operand },
-    Shl { dest: Operand, src: Operand },
-    Shr { dest: Operand, src: Operand },
-    Sar { dest: Operand, src: Operand },
-    Rol { dest: Operand, src: Operand },
-    Ror { dest: Operand, src: Operand },
-    Rcl { dest: Operand, src: Operand },
-    Rcr { dest: Operand, src: Operand },
-    Pop { dest: Operand },
+    Dec {
+        dest: Operand,
+    },
+    Shl {
+        dest: Operand,
+        src: Operand,
+    },
+    Shr {
+        dest: Operand,
+        src: Operand,
+    },
+    Sar {
+        dest: Operand,
+        src: Operand,
+    },
+    Rol {
+        dest: Operand,
+        src: Operand,
+    },
+    Ror {
+        dest: Operand,
+        src: Operand,
+    },
+    Rcl {
+        dest: Operand,
+        src: Operand,
+    },
+    Rcr {
+        dest: Operand,
+        src: Operand,
+    },
+    Pop {
+        dest: Operand,
+    },
     Ret,
-    In { dest: Operand, src: Operand },
-    Neg { dest: Operand },
+    In {
+        dest: Operand,
+        src: Operand,
+    },
+    Neg {
+        dest: Operand,
+    },
     Cbw,
     Cwd,
-    Inc { dest: Operand },
-    Mul { dest: Operand },
+    Inc {
+        dest: Operand,
+    },
+    Mul {
+        dest: Operand,
+    },
     Undefined,
 }
 
 impl std::fmt::Display for IR {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IR::Mov { dest, src } => write!(f, "mov {}, {}", dest, src),
+            IR::Mov { dest, src, byte } => write!(
+                f,
+                "mov {}{}, {}",
+                // show byte for word registers
+                match dest {
+                    Operand::Register(reg) => {
+                        if reg.is_word_register() && *byte {
+                            "byte "
+                        } else {
+                            ""
+                        }
+                    }
+                    _ => "",
+                },
+                dest,
+                src
+            ),
             IR::Int { int_type } => {
                 if *int_type == 3 {
                     write!(f, "int")
@@ -102,7 +239,23 @@ impl std::fmt::Display for IR {
             IR::Jmp { dest, short } => {
                 write!(f, "jmp {}{}", if *short { "short " } else { "" }, dest)
             }
-            IR::Test { dest, src } => write!(f, "test {}, {}", dest, src),
+            IR::Test { dest, src, byte } => write!(
+                f,
+                "test {}{}, {}",
+                // show byte for word registers
+                match dest {
+                    Operand::Register(reg) => {
+                        if reg.is_word_register() && *byte {
+                            "byte "
+                        } else {
+                            ""
+                        }
+                    }
+                    _ => "",
+                },
+                dest,
+                src
+            ),
             IR::Push { src } => write!(f, "push {}", src),
             IR::Call { dest } => write!(f, "call {}", dest),
             IR::Hlt => write!(f, "hlt"),

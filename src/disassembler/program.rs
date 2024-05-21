@@ -66,7 +66,8 @@ mod tests {
             Instruction::new(
                 IR::Mov {
                     dest: Operand::Register(Register::BX),
-                    src: Operand::LongImmediate(0x00FF)
+                    src: Operand::LongImmediate(0x00FF),
+                    byte: false
                 },
                 vec![0xbb, 0xFF, 0x00]
             )

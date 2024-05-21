@@ -1,13 +1,5 @@
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Register {
-    AX,
-    CX,
-    DX,
-    BX,
-    SP,
-    BP,
-    SI,
-    DI,
     AL,
     CL,
     DL,
@@ -16,6 +8,14 @@ pub enum Register {
     CH,
     DH,
     BH,
+    AX,
+    CX,
+    DX,
+    BX,
+    SP,
+    BP,
+    SI,
+    DI,
 }
 
 impl Register {
@@ -63,6 +63,10 @@ impl Register {
             0b001 | 0b011 => Some(Register::DI),
             _ => None,
         }
+    }
+
+    pub fn is_word_register(&self) -> bool {
+        *self > Register::BH
     }
 }
 
@@ -142,5 +146,11 @@ mod tests {
         assert_eq!(Register::get_index(0b100), None);
         assert_eq!(Register::get_index(0b101), None);
         assert_eq!(Register::get_index(0b1111), None);
+    }
+
+    #[test]
+    fn test_is_word() {
+        assert_eq!(Register::AX.is_word_register(), true);
+        assert_eq!(Register::AL.is_word_register(), false);
     }
 }

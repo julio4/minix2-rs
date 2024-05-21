@@ -237,9 +237,13 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                     total_consumed + bytes_consumed - 1,
                 )),
                 // SSB Imm from r/m
-                0b011 => {
-                    unimplemented!()
-                }
+                0b011 => Ok((
+                    IR::Ssb {
+                        dest: rm,
+                        src: data,
+                    },
+                    total_consumed + bytes_consumed - 1,
+                )),
                 // CMP Imm with r/m
                 0b111 => Ok((
                     IR::Cmp {
@@ -254,7 +258,14 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         // MOV r/m, r/e
         0x88..=0x8b => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
-            Ok((IR::Mov { dest, src }, bytes_consumed))
+            Ok((
+                IR::Mov {
+                    dest,
+                    src,
+                    byte: false,
+                },
+                bytes_consumed,
+            ))
         }
         // LEA
         0x8D => {
@@ -282,6 +293,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 IR::Mov {
                     dest: reg,
                     src: imm,
+                    byte: !w,
                 },
                 2 + w as usize,
             ))
@@ -295,6 +307,31 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xC5 => {
             let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
             Ok((IR::Lds { dest, src }, bytes_consumed + 1))
+        }
+        // mov r/m, imm
+        0xc6 | 0xc7 => {
+            let w = (opcode & 0b00000001) != 0;
+            if bytes.len() < (3 + w as usize) {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
+            let data = match w {
+                true => Operand::LongImmediate(u16::from_le_bytes([
+                    bytes[bytes_consumed + 1],
+                    bytes[bytes_consumed + 2],
+                ])),
+                false => Operand::Immediate(u8::from_le_bytes([bytes[bytes_consumed + 1]]).into()),
+            };
+
+            Ok((
+                IR::Mov {
+                    dest: rm,
+                    src: data,
+                    byte: !w,
+                },
+                2 + bytes_consumed + w as usize,
+            ))
         }
         // INT
         0xcc..=0xcd => {
@@ -457,7 +494,6 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
 
             // We need bits 5-2 from bytes 2
-
             let bits = (bytes[1] & 0b00111000) >> 3;
             match bits {
                 // NEG
@@ -482,22 +518,23 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 }
                 // TEST Imm and r/m
                 0b000 => {
-                    // next byte is data, so we should have consumed 1 bytes only
-                    // also, we should have atleast 3 bytes (4 if word data)
-                    if bytes_consumed != 1 || bytes.len() < (3 + w as usize) {
-                        return Err(ParseError::InvalidOpcode(bytes[1]));
-                    }
                     let data = match w {
-                        true => Operand::LongImmediate(u16::from_le_bytes([bytes[2], bytes[3]])),
-                        false => Operand::Immediate(u8::from_le_bytes([bytes[2]]).into()),
+                        true => Operand::LongImmediate(u16::from_le_bytes([
+                            bytes[bytes_consumed + 1],
+                            bytes[bytes_consumed + 2],
+                        ])),
+                        false => Operand::Immediate(
+                            u8::from_le_bytes([bytes[bytes_consumed + 1]]).into(),
+                        ),
                     };
 
                     Ok((
                         IR::Test {
                             dest: rm,
                             src: data,
+                            byte: !w,
                         },
-                        3 + w as usize,
+                        2 + bytes_consumed + w as usize,
                     ))
                 }
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
@@ -513,6 +550,8 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
             let bits = (bytes[1] & 0b00111000) >> 3;
             match bits {
+                // INC r/m
+                0b000 => Ok((IR::Inc { dest: rm }, bytes_consumed + 1)),
                 // CALL indirect w/ segment
                 // CALL intersegment
                 0b010 | 0b011 => Ok((IR::Call { dest: rm }, bytes_consumed + 1)),
@@ -621,28 +660,34 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_parse_instruction_mov_imm_reg() {
-        // 8 bits
-        let bytes = [0xb0, 0x00];
-        let expected_result = (
-            Instruction::new(
-                IR::Mov {
-                    dest: Operand::Register(Register::AL),
-                    src: Operand::Immediate(0x00),
-                },
-                bytes.to_vec(),
-            ),
-            2,
-        );
-        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
-
-        // 16 bits
+    fn test_parse_instruction_mov() {
+        // imm reg
         let bytes = [0xbb, 0xFF, 0x00];
         let expected_result = (
             Instruction::new(
                 IR::Mov {
                     dest: Operand::Register(Register::BX),
                     src: Operand::LongImmediate(0x00FF),
+                    byte: false,
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // imm r/m
+        let bytes = [0xc7, 0x46, 0xfa, 0x00, 0x01];
+        let expected_result = (
+            Instruction::new(
+                IR::Mov {
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BP),
+                        None,
+                        Some(Displacement::Long(-6)),
+                    )),
+                    src: Operand::LongImmediate(0x0100),
+                    byte: false,
                 },
                 bytes.to_vec(),
             ),
@@ -756,6 +801,7 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_ssb() {
+        // r/m and reg
         let bytes = [0x18, 0x00];
         let expected_result = (
             Instruction::new(
@@ -766,6 +812,57 @@ mod tests {
                         None,
                     )),
                     src: Operand::Register(Register::AL),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // Imm from r/m
+        let bytes = [0x83, 0x5e, 0xfe, 0x00];
+        let expected_result = (
+            Instruction::new(
+                IR::Ssb {
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BP),
+                        None,
+                        Some(Displacement::Long(-2)),
+                    )),
+                    src: Operand::Immediate(0x00),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_inc() {
+        // reg
+        let bytes = [0x40];
+        let expected_result = (
+            Instruction::new(
+                IR::Inc {
+                    dest: Operand::Register(Register::AX),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // r/m
+        let bytes = [0xff, 0x46, 0xf6];
+        let expected_result = (
+            Instruction::new(
+                IR::Inc {
+                    dest: Operand::Memory(Memory::new(
+                        Some(Register::BP),
+                        None,
+                        Some(Displacement::Long(-10)),
+                    )),
                 },
                 bytes.to_vec(),
             ),
@@ -987,6 +1084,7 @@ mod tests {
                 IR::Test {
                     dest: Operand::Register(Register::BL),
                     src: Operand::Immediate(0x01),
+                    byte: true,
                 },
                 bytes.to_vec(),
             ),
