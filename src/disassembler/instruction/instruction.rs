@@ -232,7 +232,9 @@ pub enum IR {
     Sti,
     Hlt,
     Wait,
-    Esc,
+    Esc {
+        dest: Operand,
+    },
     Lock,
     Undefined,
 }
@@ -367,7 +369,7 @@ impl std::fmt::Display for IR {
             IR::Sti => write!(f, "sti"),
             IR::Hlt => write!(f, "hlt"),
             IR::Wait => write!(f, "wait"),
-            IR::Esc => write!(f, "esc"),
+            IR::Esc { dest } => write!(f, "esc {}", dest),
             IR::Lock => write!(f, "lock"),
             IR::Undefined => write!(f, "(undefined)"),
         }

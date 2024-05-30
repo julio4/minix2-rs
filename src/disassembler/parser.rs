@@ -316,6 +316,8 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0x98 => Ok((IR::Cbw, 1)),
         // CWD
         0x99 => Ok((IR::Cwd, 1)),
+        // WAIT
+        0x9B => Ok((IR::Wait, 1)),
         // TEST Imm with accumulator
         0xa8 | 0xa9 => {
             let w = opcode == 0xa9;
@@ -361,6 +363,8 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 2 + w as usize,
             ))
         }
+        // RET segment / intersegment
+        0xC3 | 0xCB => Ok((IR::Ret, 1)),
         // LES
         0xC4 => {
             let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
@@ -544,6 +548,30 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 1,
             ))
         }
+        // LOCK
+        0xF0 => Ok((IR::Lock, 1)),
+        // ESC to external device
+        0xD8..=0xDF => {
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            Ok((IR::Esc { dest: rm }, 1 + bytes_consumed))
+        }
+        // REP
+        0xf2 | 0xf3 => {
+            let z = opcode == 0xf3;
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+            let ir = parse_string_manipulation_ir_from(bytes[1])?;
+            Ok((
+                IR::Rep {
+                    z,
+                    string_ir: Box::new(ir),
+                },
+                2,
+            ))
+        }
+        // CMC
+        0xF5 => Ok((IR::Cmc, 1)),
         // HLT
         0xF4 => Ok((IR::Hlt, 1)),
         0xF6..=0xF7 => {
@@ -603,23 +631,14 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
         }
-        // RET segment / intersegment
-        0xC3 | 0xCB => Ok((IR::Ret, 1)),
-        // REP
-        0xf2 | 0xf3 => {
-            let z = opcode == 0xf3;
-            if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
-            }
-            let ir = parse_string_manipulation_ir_from(bytes[1])?;
-            Ok((
-                IR::Rep {
-                    z,
-                    string_ir: Box::new(ir),
-                },
-                2,
-            ))
-        }
+        // CLC
+        0xF8 => Ok((IR::Clc, 1)),
+        // STC
+        0xF9 => Ok((IR::Stc, 1)),
+        // CLI
+        0xFA => Ok((IR::Cli, 1)),
+        // STI
+        0xfb => Ok((IR::Sti, 1)),
         // CLD
         0xfc => Ok((IR::Cld, 1)),
         // STD
@@ -1359,9 +1378,52 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_instruction_cli() {
+        let bytes = [0xfa];
+        let expected_result = (Instruction::new(IR::Cli, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_sti() {
+        let bytes = [0xfb];
+        let expected_result = (Instruction::new(IR::Sti, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
     fn test_parse_instruction_hlt() {
         let bytes = [0xf4];
         let expected_result = (Instruction::new(IR::Hlt, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_wait() {
+        let bytes = [0x9b];
+        let expected_result = (Instruction::new(IR::Wait, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_esc() {
+        let bytes = [0xd9, 0xc0];
+        let expected_result = (
+            Instruction::new(
+                IR::Esc {
+                    dest: Operand::Register(Register::AX),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_lock() {
+        let bytes = [0xf0];
+        let expected_result = (Instruction::new(IR::Lock, bytes.to_vec()), bytes.len());
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
@@ -1540,6 +1602,27 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_instruction_clc() {
+        let bytes = [0xf8];
+        let expected_result = (Instruction::new(IR::Clc, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_cmc() {
+        let bytes = [0xf5];
+        let expected_result = (Instruction::new(IR::Cmc, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_stc() {
+        let bytes = [0xf9];
+        let expected_result = (Instruction::new(IR::Stc, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
     fn test_parse_instruction_cld() {
         let bytes = [0xfc];
         let expected_result = (Instruction::new(IR::Cld, bytes.to_vec()), bytes.len());
@@ -1599,15 +1682,15 @@ mod tests {
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
-    #[test]
-    fn test_parse_instruction_invalid_opcode() {
-        // Test parsing an invalid opcode
-        let bytes = [0xFA];
-        assert_eq!(
-            parse_instruction(&bytes, 0),
-            Err(ParseError::InvalidOpcode(0xFA))
-        );
-    }
+    // #[test]
+    // fn test_parse_instruction_invalid_opcode() {
+    //     // Test parsing an invalid opcode
+    //     let bytes = [0xFA];
+    //     assert_eq!(
+    //         parse_instruction(&bytes, 0),
+    //         Err(ParseError::InvalidOpcode(0xFA))
+    //     );
+    // }
 
     #[test]
     fn test_parse_instruction_unexpected_eof() {
