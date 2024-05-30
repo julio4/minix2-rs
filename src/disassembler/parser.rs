@@ -284,6 +284,14 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                     },
                     total_consumed + bytes_consumed - 1,
                 )),
+                // XOR Imm to r/m
+                0b110 => Ok((
+                    IR::Xor {
+                        dest: rm,
+                        src: data,
+                    },
+                    total_consumed + bytes_consumed - 1,
+                )),
                 // CMP Imm with r/m
                 0b111 => Ok((
                     IR::Cmp {
@@ -411,6 +419,10 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
 
             Ok((IR::Int { int_type }, 1 + specified as usize))
         }
+        // INTO
+        0xCE => Ok((IR::Into, 1)),
+        // IRET
+        0xCF => Ok((IR::Iret, 1)),
         // Logic instructions
         0xD0..=0xD3 => {
             // TODO: v = 0 "count" = 1, v = 1 "count" = CL
@@ -570,6 +582,10 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 2,
             ))
         }
+        0xa4..=0xa7 | 0xaa..=0xaf => {
+            let ir = parse_string_manipulation_ir_from(opcode)?;
+            Ok((ir, 1))
+        }
         // CMC
         0xF5 => Ok((IR::Cmc, 1)),
         // HLT
@@ -592,21 +608,13 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 // MUL
                 0b100 => Ok((IR::Mul { dest: rm }, bytes_consumed + 1)),
                 // IMUL
-                0b101 => {
-                    unimplemented!()
-                }
+                0b101 => Ok((IR::Imul { dest: rm }, bytes_consumed + 1)),
                 // DIV
-                0b110 => {
-                    unimplemented!()
-                }
+                0b110 => Ok((IR::Div { dest: rm }, bytes_consumed + 1)),
                 // IDIV
-                0b111 => {
-                    unimplemented!()
-                }
+                0b111 => Ok((IR::Idiv { dest: rm }, bytes_consumed + 1)),
                 // NOT
-                0b010 => {
-                    unimplemented!()
-                }
+                0b010 => Ok((IR::Not { dest: rm }, bytes_consumed + 1)),
                 // TEST Imm and r/m
                 0b000 => {
                     let data = match w {
@@ -658,14 +666,15 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 // CALL indirect w/ segment
                 // CALL intersegment
                 0b010 | 0b011 => Ok((IR::Call { dest: rm }, bytes_consumed + 1)),
-                // JMP indirect w/ segment
-                0b100 => {
-                    unimplemented!()
-                }
-                // JMP intersegment
-                0b101 => {
-                    unimplemented!()
-                }
+                // JMP indirect w/ segment (100)
+                // JMP intersegment (101)
+                0b100 | 0b101 => Ok((
+                    IR::Jmp {
+                        dest: rm,
+                        short: false,
+                    },
+                    bytes_consumed + 1,
+                )),
                 // PUSH r/m
                 0b110 => Ok((IR::Push { src: rm }, bytes_consumed + 1)),
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
@@ -757,10 +766,18 @@ fn parse_word_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), Pa
 }
 
 fn parse_string_manipulation_ir_from(byte: u8) -> Result<IR, ParseError> {
-    let w = (byte & 0b00000001) != 0;
+    let word = (byte & 0b00000001) != 0;
     match byte >> 1 {
         // MOVS
-        0b1010010 => Ok(IR::Movs { word: w }),
+        0x52 => Ok(IR::Movs { word }),
+        // CMPS
+        0x53 => Ok(IR::Cmps { word }),
+        // STOS
+        0x55 => Ok(IR::Stos { word }),
+        // LODS
+        0x56 => Ok(IR::Lods { word }),
+        // SCAS
+        0x57 => Ok(IR::Scas { word }),
         _ => Err(ParseError::InvalidOpcode(byte)),
     }
 }
@@ -824,6 +841,20 @@ mod tests {
             Instruction::new(IR::Int { int_type: 1 }, bytes.to_vec()),
             bytes.len(),
         );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_into() {
+        let bytes = [0xCE];
+        let expected_result = (Instruction::new(IR::Into, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_iret() {
+        let bytes = [0xCF];
+        let expected_result = (Instruction::new(IR::Iret, bytes.to_vec()), bytes.len());
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
@@ -1125,6 +1156,7 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_xor() {
+        // r/m and reg
         let bytes = [0x30, 0x00];
         let expected_result = (
             Instruction::new(
@@ -1141,6 +1173,24 @@ mod tests {
             bytes.len(),
         );
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // Imm to r/m
+        // let bytes = [0x80, 0x36, 0x02, 0x00];
+        // let expected_result = (
+        //     Instruction::new(
+        //         IR::Xor {
+        //             dest: Operand::Memory(Memory::new(
+        //                 None,
+        //                 None,
+        //                 Some(Displacement::Long(0x2)),
+        //             )),
+        //             src: Operand::Immediate(0x00),
+        //         },
+        //         bytes.to_vec(),
+        //     ),
+        //     bytes.len(),
+        // );
+        // assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -1218,12 +1268,41 @@ mod tests {
             bytes.len(),
         );
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
         // segment
         let bytes = [0xe9, 0x57, 0x02];
         let expected_result = (
             Instruction::new(
                 IR::Jmp {
                     dest: Operand::Displacement(Displacement::Long(0x0257 + 3)),
+                    short: false,
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // Indirect w/ segment
+        let bytes = [0xff, 0xe3];
+        let expected_result = (
+            Instruction::new(
+                IR::Jmp {
+                    dest: Operand::Register(Register::BX),
+                    short: false,
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // Indirect intersegment
+        let bytes = [0xff, 0xe7];
+        let expected_result = (
+            Instruction::new(
+                IR::Jmp {
+                    dest: Operand::Register(Register::DI),
                     short: false,
                 },
                 bytes.to_vec(),
@@ -1637,6 +1716,19 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_instruction_ret() {
+        // Within segment
+        let bytes = [0xc3];
+        let expected_result = (Instruction::new(IR::Ret, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+
+        // Intersegment
+        let bytes = [0xcb];
+        let expected_result = (Instruction::new(IR::Ret, bytes.to_vec()), bytes.len());
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
     fn test_parse_instruction_mul() {
         let bytes = [0xf7, 0xe7];
         let expected_result = (
@@ -1649,6 +1741,66 @@ mod tests {
             bytes.len(),
         );
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_imul() {
+        let bytes = [0xf7, 0xef];
+        let expected_result = (
+            Instruction::new(
+                IR::Imul {
+                    dest: Operand::Register(Register::DI),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_div() {
+        let bytes = [0xf7, 0xf7];
+        let expected_result = (
+            Instruction::new(
+                IR::Div {
+                    dest: Operand::Register(Register::DI),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_idiv() {
+        let bytes = [0xf7, 0xff];
+        let expected_result = (
+            Instruction::new(
+                IR::Idiv {
+                    dest: Operand::Register(Register::DI),
+                },
+                bytes.to_vec(),
+            ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_not() {
+      let bytes = [0xf7, 0xd7];
+      let expected_result = (
+          Instruction::new(
+              IR::Not {
+                  dest: Operand::Register(Register::DI),
+              },
+              bytes.to_vec(),
+          ),
+          bytes.len(),
+      );
+      assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
     }
 
     #[test]
@@ -1677,6 +1829,56 @@ mod tests {
                 },
                 bytes.to_vec(),
             ),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_movs() {
+        let bytes = [0xa5];
+        let expected_result = (
+            Instruction::new(IR::Movs { word: true }, bytes.to_vec()),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_cmps() {
+        let bytes = [0xa6];
+        let expected_result = (
+            Instruction::new(IR::Cmps { word: false }, bytes.to_vec()),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_scas() {
+        let bytes = [0xaf];
+        let expected_result = (
+            Instruction::new(IR::Scas { word: true }, bytes.to_vec()),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_lods() {
+        let bytes = [0xad];
+        let expected_result = (
+            Instruction::new(IR::Lods { word: true }, bytes.to_vec()),
+            bytes.len(),
+        );
+        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+    }
+
+    #[test]
+    fn test_parse_instruction_stos() {
+        let bytes = [0xaa];
+        let expected_result = (
+            Instruction::new(IR::Stos { word: false }, bytes.to_vec()),
             bytes.len(),
         );
         assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));

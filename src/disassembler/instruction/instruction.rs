@@ -146,10 +146,18 @@ pub enum IR {
     Movs {
         word: bool,
     },
-    Cmps,
-    Scas,
-    Lods,
-    Stos,
+    Cmps {
+      word: bool,
+    },
+    Scas {
+      word: bool,
+    },
+    Lods {
+      word: bool,
+    },
+    Stos {
+      word: bool,
+    },
     Call {
         dest: Operand,
     },
@@ -322,10 +330,10 @@ impl std::fmt::Display for IR {
             IR::Xor { dest, src } => write!(f, "xor {}, {}", dest, src),
             IR::Rep { z: _, string_ir } => write!(f, "rep {}", string_ir),
             IR::Movs { word } => write!(f, "movs{}", if *word { "w" } else { "b" }),
-            IR::Cmps => write!(f, "cmps"),
-            IR::Scas => write!(f, "scas"),
-            IR::Lods => write!(f, "lods"),
-            IR::Stos => write!(f, "stos"),
+            IR::Cmps { word } => write!(f, "cmps{}", if *word { "w" } else { "b" }),
+            IR::Scas { word } => write!(f, "scas{}", if *word { "w" } else { "b" }),
+            IR::Lods { word } => write!(f, "lods{}", if *word { "w" } else { "b" }),
+            IR::Stos { word } => write!(f, "stos{}", if *word { "w" } else { "b" }),
             IR::Call { dest } => write!(f, "call {}", dest),
             IR::Jmp { dest, short } => {
                 write!(f, "jmp {}{}", if *short { "short " } else { "" }, dest)
