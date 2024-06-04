@@ -6,6 +6,9 @@ pub mod parser;
 pub mod program;
 pub mod register;
 
+#[cfg(test)]
+mod parser_tests;
+
 pub use displacement::Displacement;
 pub use instruction::{Instruction, IR};
 pub use memory::Memory;

@@ -72,6 +72,7 @@ pub enum IR {
     Cmp {
         dest: Operand,
         src: Operand,
+        byte: bool,
     },
     Aas,
     Das,
@@ -147,16 +148,16 @@ pub enum IR {
         word: bool,
     },
     Cmps {
-      word: bool,
+        word: bool,
     },
     Scas {
-      word: bool,
+        word: bool,
     },
     Lods {
-      word: bool,
+        word: bool,
     },
     Stos {
-      word: bool,
+        word: bool,
     },
     Call {
         dest: Operand,
@@ -165,7 +166,9 @@ pub enum IR {
         dest: Operand,
         short: bool,
     },
-    Ret,
+    Ret {
+        dest: Option<Operand>,
+    },
     Je {
         dest: Operand,
     },
@@ -262,7 +265,12 @@ impl std::fmt::Display for IR {
                             ""
                         }
                     }
-                    _ => "",
+                    _ =>
+                        if *byte {
+                            "byte "
+                        } else {
+                            ""
+                        },
                 },
                 dest,
                 src
@@ -289,7 +297,27 @@ impl std::fmt::Display for IR {
             IR::Ssb { dest, src } => write!(f, "sbb {}, {}", dest, src),
             IR::Dec { dest } => write!(f, "dec {}", dest),
             IR::Neg { dest } => write!(f, "neg {}", dest),
-            IR::Cmp { dest, src } => write!(f, "cmp {}, {}", dest, src),
+            IR::Cmp { dest, src, byte } => write!(
+                f,
+                "cmp {}{}, {}",
+                match dest {
+                    Operand::Register(reg) => {
+                        if reg.is_word_register() && *byte {
+                            "byte "
+                        } else {
+                            ""
+                        }
+                    }
+                    _ =>
+                        if *byte {
+                            "byte "
+                        } else {
+                            ""
+                        },
+                },
+                dest,
+                src
+            ),
             IR::Aas => write!(f, "aas"),
             IR::Das => write!(f, "das"),
             IR::Mul { dest } => write!(f, "mul {}", dest),
@@ -321,7 +349,12 @@ impl std::fmt::Display for IR {
                             ""
                         }
                     }
-                    _ => "",
+                    _ =>
+                        if *byte {
+                            "byte "
+                        } else {
+                            ""
+                        },
                 },
                 dest,
                 src
@@ -338,7 +371,10 @@ impl std::fmt::Display for IR {
             IR::Jmp { dest, short } => {
                 write!(f, "jmp {}{}", if *short { "short " } else { "" }, dest)
             }
-            IR::Ret => write!(f, "ret"),
+            IR::Ret { dest } => match dest {
+                Some(dest) => write!(f, "ret {}", dest),
+                None => write!(f, "ret"),
+            },
             IR::Je { dest } => write!(f, "je {}", dest),
             IR::Jl { dest } => write!(f, "jl {}", dest),
             IR::Jle { dest } => write!(f, "jle {}", dest),
