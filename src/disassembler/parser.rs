@@ -579,12 +579,16 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xCF => Ok((IR::Iret, 1)),
         // Logic instructions
         0xD0..=0xD3 => {
-            // TODO: v = 0 "count" = 1, v = 1 "count" = CL
-            let _v = (opcode & 0x1) != 0;
             let w = (opcode & 0x1) != 0;
             if bytes.len() < 2 {
                 return Err(ParseError::UnexpectedEOF);
             }
+
+            // v = 0 "count" = 1, v = 1 "count" = CL
+            let src = match (opcode & 0x2) != 0 {
+                true => Operand::Register(Register::CL),
+                false => Operand::Immediate(1),
+            };
 
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
             let bits = (bytes[1] & 0x38) >> 3;
@@ -593,7 +597,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b100 => Ok((
                     IR::Shl {
                         dest: rm,
-                        src: Operand::Immediate(1),
+                        src,
                     },
                     bytes_consumed + 1,
                 )),
@@ -601,7 +605,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b101 => Ok((
                     IR::Shr {
                         dest: rm,
-                        src: Operand::Immediate(1),
+                        src,
                     },
                     bytes_consumed + 1,
                 )),
@@ -609,7 +613,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b111 => Ok((
                     IR::Sar {
                         dest: rm,
-                        src: Operand::Immediate(1),
+                        src,
                     },
                     bytes_consumed + 1,
                 )),
@@ -617,7 +621,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b000 => Ok((
                     IR::Rol {
                         dest: rm,
-                        src: Operand::Immediate(1),
+                        src,
                     },
                     bytes_consumed + 1,
                 )),
@@ -625,7 +629,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b001 => Ok((
                     IR::Ror {
                         dest: rm,
-                        src: Operand::Immediate(1),
+                        src,
                     },
                     bytes_consumed + 1,
                 )),
@@ -633,7 +637,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b010 => Ok((
                     IR::Rcl {
                         dest: rm,
-                        src: Operand::Immediate(1),
+                        src,
                     },
                     bytes_consumed + 1,
                 )),
@@ -641,7 +645,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b011 => Ok((
                     IR::Rcr {
                         dest: rm,
-                        src: Operand::Immediate(1),
+                        src,
                     },
                     bytes_consumed + 1,
                 )),

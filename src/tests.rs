@@ -47,3 +47,23 @@ fn test_c_2() {
 fn test_c_3() {
     assert_disassemble("3.c");
 }
+
+#[test]
+fn test_c_4() {
+    assert_disassemble("4.c");
+}
+
+#[test]
+fn test_c_5() {
+    assert_disassemble("5.c");
+}
+
+#[test]
+fn test_c_6() {
+    assert_disassemble("6.c");
+}
+
+#[test]
+fn test_c_7() {
+    assert_disassemble("7.c");
+}
