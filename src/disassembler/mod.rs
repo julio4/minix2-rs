@@ -8,6 +8,8 @@ pub mod register;
 
 #[cfg(test)]
 mod parser_tests;
+#[cfg(test)]
+mod tests;
 
 pub use displacement::Displacement;
 pub use instruction::{Instruction, IR};

@@ -56,7 +56,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             Ok((IR::Adc { dest, src: data }, bytes_consumed))
         }
         // SSB r/m, r/e
-        0x18..=0x1b => {
+        0x18..=0x1B => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
             Ok((IR::Ssb { dest, src }, bytes_consumed))
         }
@@ -73,12 +73,12 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         // BAA
         0x27 => Ok((IR::Baa, 1)),
         // SUB r/m, r/e
-        0x28..=0x2b => {
+        0x28..=0x2B => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
             Ok((IR::Sub { dest, src }, bytes_consumed))
         }
         // SUB Imm from accumulator
-        0x2d | 0x2c => {
+        0x2D | 0x2C => {
             let (data, dest, _, bytes_consumed) = parse_accumulator(bytes)?;
             Ok((IR::Sub { dest, src: data }, bytes_consumed))
         }
@@ -97,7 +97,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         // AAA
         0x37 => Ok((IR::Aaa, 1)),
         // CMP r/m, r/e
-        0x38..=0x3b => {
+        0x38..=0x3B => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
             Ok((
                 IR::Cmp {
@@ -109,7 +109,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             ))
         }
         // CMP Imm with accumulator
-        0x3c | 0x3d => {
+        0x3C | 0x3D => {
             let (data, dest, _, bytes_consumed) = parse_accumulator(bytes)?;
             Ok((
                 IR::Cmp {
@@ -349,8 +349,13 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 bytes_consumed,
             ))
         }
+        // XCHG r/m, reg
+        0x86 | 0x87 => {
+            let (src, dest, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
+            Ok((IR::Xchg { dest, src }, bytes_consumed))
+        }
         // MOV r/m, r/e
-        0x88..=0x8b => {
+        0x88..=0x8B => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
             Ok((
                 IR::Mov {
@@ -361,68 +366,58 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 bytes_consumed,
             ))
         }
+
+        // MOV Seg, r/m
+        0x8C => {
+            let (src, dest, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], false)?;
+            Ok((
+                IR::Mov {
+                    dest,
+                    src,
+                    byte: true,
+                },
+                bytes_consumed + 1,
+            ))
+        }
         // LEA
         0x8D => {
             let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
             Ok((IR::Lea { dest, src }, bytes_consumed + 1))
         }
+        // MOV r/m, Seg
+        0x8E => {
+            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], false)?;
+            Ok((
+                IR::Mov {
+                    dest,
+                    src,
+                    byte: true,
+                },
+                bytes_consumed + 1,
+            ))
+        }
+        // POP r/m
+        0x8F => {
+            let (_, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            Ok((IR::Pop { dest: src }, bytes_consumed + 1))
+        }
+        // XCHG with accumulator
+        0x90..=0x97 => {
+            let reg = Register::from(opcode & 0x7, true);
+            Ok((
+                IR::Xchg {
+                    dest: Operand::Register(reg),
+                    src: Operand::Register(Register::AX),
+                },
+                1,
+            ))
+        }
         // CBW
         0x98 => Ok((IR::Cbw, 1)),
         // CWD
         0x99 => Ok((IR::Cwd, 1)),
-        // AAM and AAD
-        0xD4 | 0xD5 => {
-            if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
-            }
-            if bytes[1] != 0xA {
-                return Err(ParseError::InvalidOpcode(bytes[0]));
-            }
-
-            match bytes[0] & 0x1 {
-                // AAM
-                0 => Ok((IR::Aam, 2)),
-                // AAD
-                1 => Ok((IR::Aad, 2)),
-                _ => Err(ParseError::InvalidOpcode(bytes[0])),
-            }
-        }
         // WAIT
         0x9B => Ok((IR::Wait, 1)),
-        // TEST Imm with accumulator
-        0xa8 | 0xa9 => {
-            let (data, dest, w, bytes_consumed) = parse_accumulator(bytes)?;
-            Ok((
-                IR::Test {
-                    dest,
-                    src: data,
-                    byte: !w,
-                },
-                bytes_consumed,
-            ))
-        }
-        // MOV imm, reg
-        0xB0..=0xBF => {
-            let w = (opcode & 0x8) != 0;
-            if bytes.len() < (2 + w as usize) {
-                return Err(ParseError::UnexpectedEOF);
-            }
-
-            let reg = Operand::Register(Register::from(opcode & 0x7, w));
-            let data = match w {
-                true => Operand::LongImmediate(u16::from_le_bytes([bytes[1], bytes[2]])),
-                false => Operand::Immediate(bytes[1]),
-            };
-
-            Ok((
-                IR::Mov {
-                    dest: reg,
-                    src: data,
-                    byte: !w,
-                },
-                2 + w as usize,
-            ))
-        }
         // MOV Mem to accumulator
         0xA0 | 0xA1 => {
             let w = opcode == 0xA1;
@@ -467,51 +462,41 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 3,
             ))
         }
-        // MOV r/m, Seg
-        0x8E => {
-            let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], false)?;
+        // TEST Imm with accumulator
+        0xA8 | 0xA9 => {
+            let (data, dest, w, bytes_consumed) = parse_accumulator(bytes)?;
+            Ok((
+                IR::Test {
+                    dest,
+                    src: data,
+                    byte: !w,
+                },
+                bytes_consumed,
+            ))
+        }
+        // MOV imm, reg
+        0xB0..=0xBF => {
+            let w = (opcode & 0x8) != 0;
+            if bytes.len() < (2 + w as usize) {
+                return Err(ParseError::UnexpectedEOF);
+            }
+
+            let reg = Operand::Register(Register::from(opcode & 0x7, w));
+            let data = match w {
+                true => Operand::LongImmediate(u16::from_le_bytes([bytes[1], bytes[2]])),
+                false => Operand::Immediate(bytes[1]),
+            };
+
             Ok((
                 IR::Mov {
-                    dest,
-                    src,
-                    byte: true,
+                    dest: reg,
+                    src: data,
+                    byte: !w,
                 },
-                bytes_consumed + 1,
+                2 + w as usize,
             ))
         }
-        // MOV Seg, r/m
-        0x8C => {
-            let (src, dest, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], false)?;
-            Ok((
-                IR::Mov {
-                    dest,
-                    src,
-                    byte: true,
-                },
-                bytes_consumed + 1,
-            ))
-        }
-        // POP r/m
-        0x8F => {
-            let (_, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
-            Ok((IR::Pop { dest: src }, bytes_consumed + 1))
-        }
-        // XCHG r/m, reg
-        0x86 | 0x87 => {
-            let (src, dest, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
-            Ok((IR::Xchg { dest, src }, bytes_consumed))
-        }
-        // XCHG with accumulator
-        0x90..=0x97 => {
-            let reg = Register::from(opcode & 0x7, true);
-            Ok((
-                IR::Xchg {
-                    dest: Operand::Register(reg),
-                    src: Operand::Register(Register::AX),
-                },
-                1,
-            ))
-        }
+
         // RET Within Seg Adding Immed to SP
         0xC2 => {
             if bytes.len() < 3 {
@@ -538,7 +523,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             Ok((IR::Lds { dest, src }, bytes_consumed + 1))
         }
         // mov r/m, imm
-        0xc6 | 0xc7 => {
+        0xC6 | 0xC7 => {
             let w = opcode == 0xc7;
             if bytes.len() < (3 + w as usize) {
                 return Err(ParseError::UnexpectedEOF);
@@ -563,7 +548,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             ))
         }
         // INT
-        0xcc..=0xcd => {
+        0xCC..=0xCD => {
             let specified = (opcode & 0x1) != 0;
             if bytes.len() < (1 + specified as usize) {
                 return Err(ParseError::UnexpectedEOF);
@@ -594,63 +579,43 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let bits = (bytes[1] & 0x38) >> 3;
             match bits {
                 // SHL/SAL
-                0b100 => Ok((
-                    IR::Shl {
-                        dest: rm,
-                        src,
-                    },
-                    bytes_consumed + 1,
-                )),
+                0b100 => Ok((IR::Shl { dest: rm, src }, bytes_consumed + 1)),
                 // SHR
-                0b101 => Ok((
-                    IR::Shr {
-                        dest: rm,
-                        src,
-                    },
-                    bytes_consumed + 1,
-                )),
+                0b101 => Ok((IR::Shr { dest: rm, src }, bytes_consumed + 1)),
                 // SAR
-                0b111 => Ok((
-                    IR::Sar {
-                        dest: rm,
-                        src,
-                    },
-                    bytes_consumed + 1,
-                )),
+                0b111 => Ok((IR::Sar { dest: rm, src }, bytes_consumed + 1)),
                 // ROL
-                0b000 => Ok((
-                    IR::Rol {
-                        dest: rm,
-                        src,
-                    },
-                    bytes_consumed + 1,
-                )),
+                0b000 => Ok((IR::Rol { dest: rm, src }, bytes_consumed + 1)),
                 // ROR
-                0b001 => Ok((
-                    IR::Ror {
-                        dest: rm,
-                        src,
-                    },
-                    bytes_consumed + 1,
-                )),
+                0b001 => Ok((IR::Ror { dest: rm, src }, bytes_consumed + 1)),
                 // RCL
-                0b010 => Ok((
-                    IR::Rcl {
-                        dest: rm,
-                        src,
-                    },
-                    bytes_consumed + 1,
-                )),
+                0b010 => Ok((IR::Rcl { dest: rm, src }, bytes_consumed + 1)),
                 // RCR
-                0b011 => Ok((
-                    IR::Rcr {
-                        dest: rm,
-                        src,
-                    },
-                    bytes_consumed + 1,
-                )),
+                0b011 => Ok((IR::Rcr { dest: rm, src }, bytes_consumed + 1)),
                 _ => Err(ParseError::InvalidOpcode(bytes[1])),
             }
+        }
+        // AAM and AAD
+        0xD4 | 0xD5 => {
+            if bytes.len() < 2 {
+                return Err(ParseError::UnexpectedEOF);
+            }
+            if bytes[1] != 0xA {
+                return Err(ParseError::InvalidOpcode(bytes[0]));
+            }
+
+            match bytes[0] & 0x1 {
+                // AAM
+                0 => Ok((IR::Aam, 2)),
+                // AAD
+                1 => Ok((IR::Aad, 2)),
+                _ => Err(ParseError::InvalidOpcode(bytes[0])),
+            }
+        }
+        // ESC to external device
+        0xD8..=0xDF => {
+            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
+            Ok((IR::Esc { dest: rm }, 1 + bytes_consumed))
         }
         // LOOPNZ/LOOPNE
         0xE0 => {
@@ -720,13 +685,8 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         }
         // LOCK
         0xF0 => Ok((IR::Lock, 1)),
-        // ESC to external device
-        0xD8..=0xDF => {
-            let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
-            Ok((IR::Esc { dest: rm }, 1 + bytes_consumed))
-        }
         // REP
-        0xf2 | 0xf3 => {
+        0xF2 | 0xF3 => {
             let z = opcode == 0xf3;
             if bytes.len() < 2 {
                 return Err(ParseError::UnexpectedEOF);
@@ -740,7 +700,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 2,
             ))
         }
-        0xa4..=0xa7 | 0xaa..=0xaf => {
+        0xA4..=0xA7 | 0xAA..=0xAF => {
             let ir = parse_string_manipulation_ir_from(opcode)?;
             Ok((ir, 1))
         }
@@ -804,11 +764,11 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         // CLI
         0xFA => Ok((IR::Cli, 1)),
         // STI
-        0xfb => Ok((IR::Sti, 1)),
+        0xFB => Ok((IR::Sti, 1)),
         // CLD
-        0xfc => Ok((IR::Cld, 1)),
+        0xFC => Ok((IR::Cld, 1)),
         // STD
-        0xfd => Ok((IR::Std, 1)),
+        0xFD => Ok((IR::Std, 1)),
         0xFF => {
             if bytes.len() < 2 {
                 return Err(ParseError::UnexpectedEOF);

@@ -5,6 +5,3 @@ pub mod utils;
 
 pub use header::Header;
 pub use text_segment::TextSegment;
-
-#[cfg(test)]
-mod tests;
