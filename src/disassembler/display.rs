@@ -1,253 +1,27 @@
-use crate::disassembler::instruction::Operand;
+use crate::x86::{Displacement, Memory, Operand, Register, IR};
 
-#[derive(Debug, PartialEq)]
-pub enum IR {
-    Mov {
-        dest: Operand,
-        src: Operand,
-        byte: bool,
-    },
-    Push {
-        src: Operand,
-    },
-    Pop {
-        dest: Operand,
-    },
-    Xchg {
-        dest: Operand,
-        src: Operand,
-    },
-    In {
-        dest: Operand,
-        src: Operand,
-    },
-    Out {
-        dest: Operand,
-        src: Operand,
-    },
-    Xlat,
-    Lea {
-        dest: Operand,
-        src: Operand,
-    },
-    Lds {
-        dest: Operand,
-        src: Operand,
-    },
-    Les {
-        dest: Operand,
-        src: Operand,
-    },
-    Lahf,
-    Sahf,
-    Pushf,
-    Popf,
-    Add {
-        dest: Operand,
-        src: Operand,
-    },
-    Adc {
-        dest: Operand,
-        src: Operand,
-    },
-    Inc {
-        dest: Operand,
-    },
-    Aaa,
-    Baa,
-    Sub {
-        dest: Operand,
-        src: Operand,
-    },
-    Ssb {
-        dest: Operand,
-        src: Operand,
-    },
-    Dec {
-        dest: Operand,
-    },
-    Neg {
-        dest: Operand,
-    },
-    Cmp {
-        dest: Operand,
-        src: Operand,
-        byte: bool,
-    },
-    Aas,
-    Das,
-    Mul {
-        dest: Operand,
-    },
-    Imul {
-        dest: Operand,
-    },
-    Aam,
-    Div {
-        dest: Operand,
-    },
-    Idiv {
-        dest: Operand,
-    },
-    Aad,
-    Cbw,
-    Cwd,
-    Not {
-        dest: Operand,
-    },
-    Shl {
-        dest: Operand,
-        src: Operand,
-    },
-    Shr {
-        dest: Operand,
-        src: Operand,
-    },
-    Sar {
-        dest: Operand,
-        src: Operand,
-    },
-    Rol {
-        dest: Operand,
-        src: Operand,
-    },
-    Ror {
-        dest: Operand,
-        src: Operand,
-    },
-    Rcl {
-        dest: Operand,
-        src: Operand,
-    },
-    Rcr {
-        dest: Operand,
-        src: Operand,
-    },
-    And {
-        dest: Operand,
-        src: Operand,
-    },
-    Test {
-        dest: Operand,
-        src: Operand,
-        byte: bool,
-    },
-    Or {
-        dest: Operand,
-        src: Operand,
-    },
-    Xor {
-        dest: Operand,
-        src: Operand,
-    },
-    Rep {
-        z: bool,
-        string_ir: Box<IR>,
-    },
-    Movs {
-        word: bool,
-    },
-    Cmps {
-        word: bool,
-    },
-    Scas {
-        word: bool,
-    },
-    Lods {
-        word: bool,
-    },
-    Stos {
-        word: bool,
-    },
-    Call {
-        dest: Operand,
-    },
-    Jmp {
-        dest: Operand,
-        short: bool,
-    },
-    Ret {
-        dest: Option<Operand>,
-    },
-    Je {
-        dest: Operand,
-    },
-    Jl {
-        dest: Operand,
-    },
-    Jle {
-        dest: Operand,
-    },
-    Jb {
-        dest: Operand,
-    },
-    Jbe {
-        dest: Operand,
-    },
-    Jp {
-        dest: Operand,
-    },
-    Jo {
-        dest: Operand,
-    },
-    Js {
-        dest: Operand,
-    },
-    Jne {
-        dest: Operand,
-    },
-    Jnl {
-        dest: Operand,
-    },
-    Jnle {
-        dest: Operand,
-    },
-    Jnb {
-        dest: Operand,
-    },
-    Jnbe {
-        dest: Operand,
-    },
-    Jnp {
-        dest: Operand,
-    },
-    Jno {
-        dest: Operand,
-    },
-    Jns {
-        dest: Operand,
-    },
-    Loop {
-        dest: Operand,
-    },
-    Loopz {
-        dest: Operand,
-    },
-    Loopnz {
-        dest: Operand,
-    },
-    Jcxz {
-        dest: Operand,
-    },
-    Int {
-        int_type: u8,
-    },
-    Into,
-    Iret,
-    Clc,
-    Cmc,
-    Stc,
-    Cld,
-    Std,
-    Cli,
-    Sti,
-    Hlt,
-    Wait,
-    Esc {
-        dest: Operand,
-    },
-    Lock,
-    Undefined,
+impl std::fmt::Display for Register {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reg = match self {
+            Register::AX => "ax",
+            Register::CX => "cx",
+            Register::DX => "dx",
+            Register::BX => "bx",
+            Register::SP => "sp",
+            Register::BP => "bp",
+            Register::SI => "si",
+            Register::DI => "di",
+            Register::AL => "al",
+            Register::CL => "cl",
+            Register::DL => "dl",
+            Register::BL => "bl",
+            Register::AH => "ah",
+            Register::CH => "ch",
+            Register::DH => "dh",
+            Register::BH => "bh",
+        };
+        write!(f, "{}", reg)
+    }
 }
 
 impl std::fmt::Display for IR {
@@ -420,28 +194,102 @@ impl std::fmt::Display for IR {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Instruction {
-    pub ir: IR,
-    pub raw: Vec<u8>,
-}
+impl std::fmt::Display for Memory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let base = match &self.base {
+            Some(b) => format!("{}", b),
+            None => "".to_string(),
+        };
+        let index = match &self.index {
+            Some(i) => format!("+{}", i),
+            None => "".to_string(),
+        };
 
-impl Instruction {
-    pub fn new(ir: IR, raw: Vec<u8>) -> Self {
-        Instruction { ir, raw }
+        // If only disp, convert to [imm]
+        return if base.is_empty() && index.is_empty() && self.disp.is_some() {
+            let value = match self.disp.as_ref().unwrap() {
+                Displacement::Short(d) => *d as i16,
+                Displacement::Long(d) => *d,
+            };
+            write!(f, "[{:0>4x}]", value)
+        } else {
+            write!(f, "[{}{}{}]", base, index, {
+                match &self.disp {
+                    Some(d) => {
+                        if d.is_neg() {
+                            format!("{}", d)
+                        } else {
+                            format!("+{}", d)
+                        }
+                    }
+                    None => "".to_string(),
+                }
+            })
+        };
     }
 }
 
-impl std::fmt::Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:<14}{}",
-            self.raw
-                .iter()
-                .map(|b| format!("{:02x}", b))
-                .collect::<String>(),
-            self.ir
-        )
+#[cfg(test)]
+mod memory_display_test {
+    use super::*;
+
+    #[test]
+    fn test_memory_display_no_displacement() {
+        let memory = Memory {
+            base: Some(Register::BX),
+            index: None,
+            disp: None,
+        };
+        assert_eq!(format!("{}", memory), "[bx]");
+    }
+
+    #[test]
+    fn test_memory_display_with_8bits_displacement() {
+        let memory = Memory {
+            base: Some(Register::BX),
+            index: None,
+            disp: Some(Displacement::Short(0x5)),
+        };
+        assert_eq!(format!("{}", memory), "[bx+5]");
+    }
+
+    #[test]
+    fn test_memory_display_with_16bits_displacement() {
+        let memory = Memory {
+            base: Some(Register::BX),
+            index: None,
+            disp: Some(Displacement::Long(0x1000)),
+        };
+        assert_eq!(format!("{}", memory), "[bx+1000]");
+    }
+
+    #[test]
+    fn test_memory_display_with_base_index_displacement() {
+        let memory = Memory {
+            base: Some(Register::BX),
+            index: Some(Register::SI),
+            disp: Some(Displacement::Short(0x8)),
+        };
+        assert_eq!(format!("{}", memory), "[bx+si+8]");
+    }
+
+    #[test]
+    fn test_memory_display_with_displacement_as_ea() {
+        let memory = Memory {
+            base: None,
+            index: None,
+            disp: Some(Displacement::Long(0x0010)),
+        };
+        assert_eq!(format!("{}", memory), "[0010]");
+    }
+
+    #[test]
+    fn test_memory_display_with_signed_displacement() {
+        let memory = Memory {
+            base: Some(Register::BX),
+            index: Some(Register::SI),
+            disp: Some(Displacement::Long((0x89u8 as i8) as i16)),
+        };
+        assert_eq!(format!("{}", memory), "[bx+si-77]");
     }
 }

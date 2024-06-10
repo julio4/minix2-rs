@@ -1,4 +1,4 @@
-use minix2_rs::disassembler::minix2_disassemble;
+use minix2_rs::disassembler::decode;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -9,7 +9,7 @@ fn main() {
         return;
     }
 
-    match minix2_disassemble(args) {
+    match decode(args) {
         Ok(result) => println!("{}", result),
         Err(e) => eprintln!("{}", e),
     }

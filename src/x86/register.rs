@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq)]
 pub enum Register {
     AL,
     CL,
@@ -16,6 +16,31 @@ pub enum Register {
     BP,
     SI,
     DI,
+}
+
+impl Register {
+    pub fn iter() -> impl Iterator<Item = Register> {
+        [
+            Register::AL,
+            Register::CL,
+            Register::DL,
+            Register::BL,
+            Register::AH,
+            Register::CH,
+            Register::DH,
+            Register::BH,
+            Register::AX,
+            Register::CX,
+            Register::DX,
+            Register::BX,
+            Register::SP,
+            Register::BP,
+            Register::SI,
+            Register::DI,
+        ]
+        .iter()
+        .copied()
+    }
 }
 
 impl Register {
@@ -67,30 +92,6 @@ impl Register {
 
     pub fn is_word_register(&self) -> bool {
         *self > Register::BH
-    }
-}
-
-impl std::fmt::Display for Register {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let reg = match self {
-            Register::AX => "ax",
-            Register::CX => "cx",
-            Register::DX => "dx",
-            Register::BX => "bx",
-            Register::SP => "sp",
-            Register::BP => "bp",
-            Register::SI => "si",
-            Register::DI => "di",
-            Register::AL => "al",
-            Register::CL => "cl",
-            Register::DL => "dl",
-            Register::BL => "bl",
-            Register::AH => "ah",
-            Register::CH => "ch",
-            Register::DH => "dh",
-            Register::BH => "bh",
-        };
-        write!(f, "{}", reg)
     }
 }
 

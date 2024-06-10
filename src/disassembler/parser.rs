@@ -1,6 +1,8 @@
-use crate::disassembler::{
-    error::ParseError, instruction::Operand, Displacement, Instruction, Register, IR,
-};
+use super::error::DisassemblerError;
+use crate::x86::{Instruction, Operand, Register, IR};
+
+mod parser_utils;
+use parser_utils::*;
 
 /// Parses the given byte slice and returns the parsed instruction along with the number of bytes consumed.
 ///
@@ -13,13 +15,16 @@ use crate::disassembler::{
 ///
 /// Returns a `Result` containing a tuple with the parsed `Instruction` and the number of bytes consumed.
 /// If parsing fails, a `ParseError` is returned.
-pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize), ParseError> {
+pub fn parse_instruction(
+    bytes: &[u8],
+    ip: usize,
+) -> Result<(Instruction, usize), DisassemblerError> {
     if bytes.is_empty() {
-        return Err(ParseError::UnexpectedEOF);
+        return Err(DisassemblerError::UnexpectedEOF);
     }
 
     let opcode = bytes[0];
-    let ir: Result<(IR, usize), ParseError> = match opcode {
+    let ir: Result<(IR, usize), DisassemblerError> = match opcode {
         // ADD r/m, r/e
         0x0..=0x3 => {
             let (dest, src, bytes_consumed) = parse_dw_mod_reg_rm_bytes(bytes)?;
@@ -249,7 +254,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             let is_word_data = !s && w;
             let total_consumed = 3 + is_word_data as usize;
             if bytes.len() < total_consumed {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
 
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
@@ -334,7 +339,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                     },
                     total_consumed + bytes_consumed - 1,
                 )),
-                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+                _ => Err(DisassemblerError::InvalidOpcode(bytes[1])),
             }
         }
         // TEST r/m, r/e
@@ -422,7 +427,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xA0 | 0xA1 => {
             let w = opcode == 0xA1;
             if bytes.len() < 3 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             };
 
             let dest = match w {
@@ -444,7 +449,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xA2 | 0xA3 => {
             let w = opcode == 0xA3;
             if bytes.len() < 3 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             };
 
             let src = match w {
@@ -478,7 +483,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xB0..=0xBF => {
             let w = (opcode & 0x8) != 0;
             if bytes.len() < (2 + w as usize) {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
 
             let reg = Operand::Register(Register::from(opcode & 0x7, w));
@@ -500,7 +505,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         // RET Within Seg Adding Immed to SP
         0xC2 => {
             if bytes.len() < 3 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
             let dest = u16::from_le_bytes([bytes[1], bytes[2]]);
             Ok((
@@ -526,7 +531,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xC6 | 0xC7 => {
             let w = opcode == 0xc7;
             if bytes.len() < (3 + w as usize) {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
 
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
@@ -551,7 +556,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xCC..=0xCD => {
             let specified = (opcode & 0x1) != 0;
             if bytes.len() < (1 + specified as usize) {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
 
             let int_type = if specified { bytes[1] } else { 3 };
@@ -566,7 +571,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xD0..=0xD3 => {
             let w = (opcode & 0x1) != 0;
             if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
 
             // v = 0 "count" = 1, v = 1 "count" = CL
@@ -592,16 +597,16 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0b010 => Ok((IR::Rcl { dest: rm, src }, bytes_consumed + 1)),
                 // RCR
                 0b011 => Ok((IR::Rcr { dest: rm, src }, bytes_consumed + 1)),
-                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+                _ => Err(DisassemblerError::InvalidOpcode(bytes[1])),
             }
         }
         // AAM and AAD
         0xD4 | 0xD5 => {
             if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
             if bytes[1] != 0xA {
-                return Err(ParseError::InvalidOpcode(bytes[0]));
+                return Err(DisassemblerError::InvalidOpcode(bytes[0]));
             }
 
             match bytes[0] & 0x1 {
@@ -609,7 +614,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 0 => Ok((IR::Aam, 2)),
                 // AAD
                 1 => Ok((IR::Aad, 2)),
-                _ => Err(ParseError::InvalidOpcode(bytes[0])),
+                _ => Err(DisassemblerError::InvalidOpcode(bytes[0])),
             }
         }
         // ESC to external device
@@ -640,7 +645,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         // IN fixed port
         0xE4 | 0xE5 => {
             if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
 
             let w = (opcode & 0x1) != 0;
@@ -689,7 +694,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xF2 | 0xF3 => {
             let z = opcode == 0xf3;
             if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
             let ir = parse_string_manipulation_ir_from(bytes[1])?;
             Ok((
@@ -712,7 +717,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
             // 1111011w opcode
             // atleast 2 bytes
             if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
             let w = (opcode & 0x1) != 0;
 
@@ -754,7 +759,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                         2 + bytes_consumed + w as usize,
                     ))
                 }
-                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+                _ => Err(DisassemblerError::InvalidOpcode(bytes[1])),
             }
         }
         // CLC
@@ -771,7 +776,7 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
         0xFD => Ok((IR::Std, 1)),
         0xFF => {
             if bytes.len() < 2 {
-                return Err(ParseError::UnexpectedEOF);
+                return Err(DisassemblerError::UnexpectedEOF);
             }
 
             let (_, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;
@@ -795,10 +800,10 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
                 )),
                 // PUSH r/m
                 0b110 => Ok((IR::Push { src: rm }, bytes_consumed + 1)),
-                _ => Err(ParseError::InvalidOpcode(bytes[1])),
+                _ => Err(DisassemblerError::InvalidOpcode(bytes[1])),
             }
         }
-        _ => Err(ParseError::InvalidOpcode(opcode)),
+        _ => Err(DisassemblerError::InvalidOpcode(opcode)),
     };
 
     ir.map(|(ir, bytes_consumed)| {
@@ -809,116 +814,5 @@ pub fn parse_instruction(bytes: &[u8], ip: usize) -> Result<(Instruction, usize)
     })
 }
 
-/// Parse the given byte as:
-/// 76  543 210
-/// mod reg r/m
-/// And return the operands (dest, src, bytes_consumed)
-/// Warning: This will consume FROM the given byte slice (be sure that bytes[0] is the modrm byte)
-fn parse_mod_reg_rm_bytes(bytes: &[u8], w: bool) -> Result<(Operand, Operand, usize), ParseError> {
-    let mod_ = (bytes[0] & 0xC0) >> 6;
-    let rm = bytes[0] & 0x7;
-    let reg = Register::from((bytes[0] & 0x38) >> 3, w);
-
-    let reg = Operand::Register(reg);
-    let (rm, bytes_consumed) = Operand::parse_modrm(mod_, rm, bytes, w)?;
-    Ok((reg, rm, bytes_consumed + 1))
-}
-
-/// See `parse_mod_reg_rm_bytes`, but with first w byte:
-/// 76543210  76  543 210
-/// -------w  mod reg r/m
-/// And return the operands (dest, src, bytes_consumed)
-fn _parse_w_mod_reg_rm_bytes(bytes: &[u8]) -> Result<(Operand, Operand, usize), ParseError> {
-    if bytes.len() < 2 {
-        return Err(ParseError::UnexpectedEOF);
-    }
-    let w = (bytes[0] & 0x1) != 0;
-    let (reg, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
-    Ok((reg, rm, bytes_consumed + 1))
-}
-
-/// Parse the given two bytes as:
-/// 76543210  76  543 210
-/// ------dw  mod reg r/m
-/// And return the operands (dest, src, bytes_consumed)
-fn parse_dw_mod_reg_rm_bytes(bytes: &[u8]) -> Result<(Operand, Operand, usize), ParseError> {
-    if bytes.len() < 2 {
-        return Err(ParseError::UnexpectedEOF);
-    }
-    let d: bool = (bytes[0] & 0x2) != 0;
-    let w = (bytes[0] & 0x1) != 0;
-    let (reg, rm, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], w)?;
-
-    let (dest, src) = if d { (reg, rm) } else { (rm, reg) };
-    Ok((dest, src, bytes_consumed + 1))
-}
-
-/// Parse the given two bytes as:
-/// 76543210  76543210
-/// --------    disp
-/// And return the operand (dest, bytes_consumed)
-fn parse_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), ParseError> {
-    if bytes.len() < 2 {
-        return Err(ParseError::UnexpectedEOF);
-    }
-    Ok((
-        Operand::Displacement(Displacement::Long((bytes[1] as i8) as i16 + ip as i16 + 2)),
-        2,
-    ))
-}
-
-// Parse the rest of the bytes as:
-// 76543210  76543210 76543210
-// -------w    data   if w: data
-// And return the operand (data, dest, w, bytes_consumed)
-fn parse_accumulator(data: &[u8]) -> Result<(Operand, Operand, bool, usize), ParseError> {
-    let w = (data[0] & 0x1) != 0;
-    if data.len() < 2 + w as usize {
-        return Err(ParseError::UnexpectedEOF);
-    }
-
-    let data = match w {
-        true => Operand::LongImmediate(u16::from_le_bytes([data[1], data[2]])),
-        false => Operand::Immediate(data[1]),
-    };
-
-    let dest = match w {
-        true => Operand::Register(Register::AX),
-        false => Operand::Register(Register::AL),
-    };
-
-    Ok((data, dest, w, 2 + w as usize))
-}
-
-/// Parse the given three bytes as:
-/// 76543210  76543210 76543210
-/// --------  disp-low disp-high
-/// And return the operand (dest, bytes_consumed)
-fn parse_word_disp_bytes(bytes: &[u8], ip: usize) -> Result<(Operand, usize), ParseError> {
-    if bytes.len() < 3 {
-        return Err(ParseError::UnexpectedEOF);
-    }
-    Ok((
-        Operand::Displacement(Displacement::Long(
-            i16::from_le_bytes([bytes[1], bytes[2]]) + ip as i16 + 3,
-        )),
-        3,
-    ))
-}
-
-fn parse_string_manipulation_ir_from(byte: u8) -> Result<IR, ParseError> {
-    let word = (byte & 0x1) != 0;
-    match byte >> 1 {
-        // MOVS
-        0x52 => Ok(IR::Movs { word }),
-        // CMPS
-        0x53 => Ok(IR::Cmps { word }),
-        // STOS
-        0x55 => Ok(IR::Stos { word }),
-        // LODS
-        0x56 => Ok(IR::Lods { word }),
-        // SCAS
-        0x57 => Ok(IR::Scas { word }),
-        _ => Err(ParseError::InvalidOpcode(byte)),
-    }
-}
+#[cfg(test)]
+mod parser_tests;

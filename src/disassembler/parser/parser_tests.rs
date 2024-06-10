@@ -1,6 +1,7 @@
-use crate::disassembler::{
-    error::ParseError, instruction::Operand, parser::parse_instruction, Displacement, Instruction,
-    Memory, Register, IR,
+use crate::disassembler::parser;
+use crate::{
+    disassembler::error::DisassemblerError,
+    x86::{Displacement, Instruction, Memory, Operand, Register, IR},
 };
 use pretty_assertions::assert_eq;
 
@@ -11,7 +12,7 @@ macro_rules! assert_parse {
             Instruction::new($expected_result, bytes.to_vec()),
             bytes.len(),
         );
-        assert_eq!(parse_instruction(&bytes, 0), Ok(expected_result));
+        assert_eq!(parser::parse_instruction(&bytes, 0), Ok(expected_result));
     };
 }
 
@@ -750,5 +751,8 @@ fn test_stos() {
 #[test]
 fn test_unexpected_eof() {
     let bytes = [0b10110000];
-    assert_eq!(parse_instruction(&bytes, 0), Err(ParseError::UnexpectedEOF));
+    assert_eq!(
+        parser::parse_instruction(&bytes, 0),
+        Err(DisassemblerError::UnexpectedEOF)
+    );
 }
