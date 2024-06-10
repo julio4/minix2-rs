@@ -2,7 +2,7 @@ use super::error::DisassemblerError;
 use crate::x86::{Instruction, Operand, Register, IR};
 
 mod parser_utils;
-use parser_utils::*;
+use self::parser_utils::*;
 
 /// Parses the given byte slice and returns the parsed instruction along with the number of bytes consumed.
 ///

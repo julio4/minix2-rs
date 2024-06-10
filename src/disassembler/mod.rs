@@ -1,6 +1,5 @@
 mod decoder;
-mod display;
 mod error;
 mod parser;
 
-pub use decoder::{decode, Disassembler};
+pub use self::decoder::{decode, Disassembler};

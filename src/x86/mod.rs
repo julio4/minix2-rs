@@ -5,10 +5,9 @@ mod memory;
 mod operand;
 mod register;
 
-pub use displacement::Displacement;
-pub use executable::Executable;
-pub use instruction::{Instruction, IR};
-pub use memory::Memory;
-/// Exports
-pub use operand::Operand;
-pub use register::Register;
+pub use self::displacement::Displacement;
+pub use self::executable::Executable;
+pub use self::instruction::{Instruction, IR};
+pub use self::memory::Memory;
+pub use self::operand::Operand;
+pub use self::register::Register;

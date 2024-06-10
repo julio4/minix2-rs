@@ -3,4 +3,4 @@ mod header;
 mod program;
 mod segment;
 
-pub use program::Program;
+pub use self::program::Program;
