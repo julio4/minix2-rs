@@ -1,4 +1,4 @@
-use super::Instruction;
+use super::{Instruction, IR};
 
 pub struct Executable {
     pub instructions: Vec<Instruction>,
@@ -7,6 +7,13 @@ pub struct Executable {
 impl Executable {
     pub fn new(instructions: Vec<Instruction>) -> Self {
         Executable { instructions }
+    }
+}
+
+impl From<Vec<IR>> for Executable {
+    fn from(ir: Vec<IR>) -> Self {
+        let instructions = ir.into_iter().map(|ir| ir.into()).collect();
+        Executable::new(instructions)
     }
 }
 

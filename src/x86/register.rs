@@ -1,4 +1,4 @@
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Hash)]
 pub enum Register {
     AL,
     CL,

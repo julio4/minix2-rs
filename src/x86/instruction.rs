@@ -262,6 +262,12 @@ impl Instruction {
     }
 }
 
+impl Into<Instruction> for IR {
+    fn into(self) -> Instruction {
+        Instruction::new(self, vec![])
+    }
+}
+
 impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
