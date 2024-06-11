@@ -22,3 +22,11 @@ impl<'a> fmt::Debug for HexdumpFormatter<'a> {
         write!(f, "{}", s)
     }
 }
+
+pub fn min<T: PartialOrd>(a: T, b: T) -> T {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
