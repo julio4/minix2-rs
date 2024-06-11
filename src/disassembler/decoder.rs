@@ -1,17 +1,16 @@
-use super::error::DisassemblerError;
 use super::parser;
-use crate::x86::Executable;
+use super::{error::DisassemblerError, DisassembledProgram};
 use crate::{
     minix::Program,
     x86::{Instruction, IR},
 };
 
-pub trait Disassembler {
-    fn disassemble(&self) -> Result<Executable, DisassemblerError>;
+pub trait Disassemblable {
+    fn disassemble(&self) -> Result<DisassembledProgram, DisassemblerError>;
 }
 
-impl Disassembler for Program {
-    fn disassemble(&self) -> Result<Executable, DisassemblerError> {
+impl Disassemblable for Program {
+    fn disassemble(&self) -> Result<DisassembledProgram, DisassemblerError> {
         let mut instructions = Vec::new();
         let mut text = self.text_segment.as_slice();
 
@@ -30,7 +29,10 @@ impl Disassembler for Program {
             text = &text[bytes_consumed..];
         }
 
-        Ok(Executable::new(instructions))
+        Ok(DisassembledProgram::new(
+            instructions,
+            self.data_segment.data.clone(),
+        ))
     }
 }
 
@@ -42,8 +44,8 @@ pub fn decode(args: Vec<String>) -> Result<String, DisassemblerError> {
     let file = std::fs::File::open(&args[1]).map_err(|_| DisassemblerError::InvalidArgs)?;
     let program = Program::from_file(file).map_err(|_| DisassemblerError::InvalidArgs)?;
 
-    let executable = program.disassemble()?;
-    Ok(executable.to_string())
+    let disassembled = program.disassemble()?;
+    Ok(disassembled.to_string())
 }
 
 #[cfg(test)]
