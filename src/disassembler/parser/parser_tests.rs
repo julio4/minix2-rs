@@ -1,7 +1,7 @@
 use crate::disassembler::parser;
 use crate::{
     disassembler::error::DisassemblerError,
-    x86::{Displacement, Instruction, Memory, Operand, Register, IR},
+    x86::{Address, Displacement, Instruction, Operand, Register, IR},
 };
 use pretty_assertions::assert_eq;
 
@@ -32,7 +32,7 @@ fn test_mov() {
     assert_parse!(
         [0xc7, 0x46, 0xfa, 0x00, 0x01],
         IR::Mov {
-            dest: Operand::Memory(Memory::new(
+            dest: Operand::MemoryAddress(Address::new(
                 Some(Register::BP),
                 None,
                 Some(Displacement::Long(-6)),
@@ -65,7 +65,11 @@ fn test_add() {
     assert_parse!(
         [0x00, 0x00],
         IR::Add {
-            dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), None)),
+            dest: Operand::MemoryAddress(Address::new(
+                Some(Register::BX),
+                Some(Register::SI),
+                None
+            )),
             src: Operand::Register(Register::AL),
         }
     );
@@ -98,7 +102,11 @@ fn test_sub() {
     assert_parse!(
         [0x28, 0x00],
         IR::Sub {
-            dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), None)),
+            dest: Operand::MemoryAddress(Address::new(
+                Some(Register::BX),
+                Some(Register::SI),
+                None
+            )),
             src: Operand::Register(Register::AL),
         }
     );
@@ -128,7 +136,11 @@ fn test_ssb() {
     assert_parse!(
         [0x18, 0x00],
         IR::Ssb {
-            dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), None)),
+            dest: Operand::MemoryAddress(Address::new(
+                Some(Register::BX),
+                Some(Register::SI),
+                None
+            )),
             src: Operand::Register(Register::AL),
         }
     );
@@ -137,7 +149,7 @@ fn test_ssb() {
     assert_parse!(
         [0x83, 0x5e, 0xfe, 0x00],
         IR::Ssb {
-            dest: Operand::Memory(Memory::new(
+            dest: Operand::MemoryAddress(Address::new(
                 Some(Register::BP),
                 None,
                 Some(Displacement::Long(-2)),
@@ -161,7 +173,7 @@ fn test_inc() {
     assert_parse!(
         [0xff, 0x46, 0xf6],
         IR::Inc {
-            dest: Operand::Memory(Memory::new(
+            dest: Operand::MemoryAddress(Address::new(
                 Some(Register::BP),
                 None,
                 Some(Displacement::Long(-10)),
@@ -176,7 +188,11 @@ fn test_cmp() {
     assert_parse!(
         [0x38, 0x00],
         IR::Cmp {
-            dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), None)),
+            dest: Operand::MemoryAddress(Address::new(
+                Some(Register::BX),
+                Some(Register::SI),
+                None
+            )),
             src: Operand::Register(Register::AL),
             byte: true,
         }
@@ -186,7 +202,7 @@ fn test_cmp() {
     assert_parse!(
         [0x83, 0x7c, 0x02, 0x00],
         IR::Cmp {
-            dest: Operand::Memory(Memory::new(
+            dest: Operand::MemoryAddress(Address::new(
                 Some(Register::SI),
                 None,
                 Some(Displacement::Long(0x2)),
@@ -213,7 +229,11 @@ fn test_and() {
     assert_parse!(
         [0x20, 0x00],
         IR::And {
-            dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), None)),
+            dest: Operand::MemoryAddress(Address::new(
+                Some(Register::BX),
+                Some(Register::SI),
+                None
+            )),
             src: Operand::Register(Register::AL),
         }
     );
@@ -234,7 +254,11 @@ fn test_or() {
     assert_parse!(
         [0x8, 0x00],
         IR::Or {
-            dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), None)),
+            dest: Operand::MemoryAddress(Address::new(
+                Some(Register::BX),
+                Some(Register::SI),
+                None
+            )),
             src: Operand::Register(Register::AL),
         }
     );
@@ -255,7 +279,11 @@ fn test_xor() {
     assert_parse!(
         [0x30, 0x00],
         IR::Xor {
-            dest: Operand::Memory(Memory::new(Some(Register::BX), Some(Register::SI), None)),
+            dest: Operand::MemoryAddress(Address::new(
+                Some(Register::BX),
+                Some(Register::SI),
+                None
+            )),
             src: Operand::Register(Register::AL),
         }
     );
@@ -276,7 +304,7 @@ fn test_lea() {
         [0x8D, 0x57, 0x02],
         IR::Lea {
             dest: Operand::Register(Register::DX),
-            src: Operand::Memory(Memory::new(
+            src: Operand::MemoryAddress(Address::new(
                 Some(Register::BX),
                 None,
                 Some(Displacement::Long(0x2)),
@@ -291,7 +319,7 @@ fn test_lds() {
         [0xC5, 0x57, 0x02],
         IR::Lds {
             dest: Operand::Register(Register::DX),
-            src: Operand::Memory(Memory::new(
+            src: Operand::MemoryAddress(Address::new(
                 Some(Register::BX),
                 None,
                 Some(Displacement::Long(0x2)),
@@ -306,7 +334,7 @@ fn test_les() {
         [0xC4, 0x57, 0x02],
         IR::Les {
             dest: Operand::Register(Register::DX),
-            src: Operand::Memory(Memory::new(
+            src: Operand::MemoryAddress(Address::new(
                 Some(Register::BX),
                 None,
                 Some(Displacement::Long(0x2)),
@@ -401,7 +429,7 @@ fn test_push() {
     assert_parse!(
         [0xff, 0x76, 0x04],
         IR::Push {
-            src: Operand::Memory(Memory::new(
+            src: Operand::MemoryAddress(Address::new(
                 Some(Register::BP),
                 None,
                 Some(Displacement::Long(0x4)),
@@ -444,7 +472,7 @@ fn test_dec() {
     assert_parse!(
         [0xff, 0x4e, 0xf4],
         IR::Dec {
-            dest: Operand::Memory(Memory::new(
+            dest: Operand::MemoryAddress(Address::new(
                 Some(Register::BP),
                 None,
                 Some(Displacement::Long(-0xc)),

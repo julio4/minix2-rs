@@ -1,5 +1,5 @@
 use super::displacement::Displacement;
-use super::Memory;
+use super::Address;
 use super::Register;
 
 #[derive(Debug, PartialEq)]
@@ -8,7 +8,7 @@ pub enum Operand {
     Immediate(u8),
     LongImmediate(u16),
     SignExtendedImmediate(i8),
-    Memory(Memory),
+    MemoryAddress(Address),
     Displacement(Displacement),
 }
 
@@ -25,7 +25,7 @@ impl std::fmt::Display for Operand {
                     write!(f, "{:x}", i)
                 }
             }
-            Operand::Memory(mem) => write!(f, "{}", mem),
+            Operand::MemoryAddress(mem) => write!(f, "{}", mem),
             Operand::Displacement(d) => match d {
                 Displacement::Short(d) => write!(f, "{:02x}", d),
                 Displacement::Long(d) => write!(f, "{:04x}", d),

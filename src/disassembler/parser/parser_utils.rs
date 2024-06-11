@@ -1,5 +1,5 @@
 use crate::disassembler::error::DisassemblerError;
-use crate::x86::{Displacement, Memory, Operand, Register, IR};
+use crate::x86::{Address, Displacement, Operand, Register, IR};
 
 impl Operand {
     /// Parse a ModRM byte and return the corresponding operand.
@@ -20,7 +20,7 @@ impl Operand {
                         return Err(DisassemblerError::UnexpectedEOF);
                     }
                     Ok((
-                        Operand::Memory(Memory {
+                        Operand::MemoryAddress(Address {
                             base: None,
                             index: None,
                             disp: Some(Displacement::Long(i16::from_le_bytes([
@@ -31,7 +31,7 @@ impl Operand {
                     ))
                 } else {
                     Ok((
-                        Operand::Memory(Memory {
+                        Operand::MemoryAddress(Address {
                             base: Register::get_base(rm),
                             index: Register::get_index(rm),
                             disp: None,
@@ -48,7 +48,7 @@ impl Operand {
                 // sign extended to i16
                 let disp = Displacement::Long(bytes[1] as i8 as i16);
                 return Ok((
-                    Operand::Memory(Memory {
+                    Operand::MemoryAddress(Address {
                         base: Register::get_base(rm),
                         index: Register::get_index(rm),
                         disp: Some(disp),
@@ -62,7 +62,7 @@ impl Operand {
                     return Err(DisassemblerError::UnexpectedEOF);
                 }
                 return Ok((
-                    Operand::Memory(Memory {
+                    Operand::MemoryAddress(Address {
                         base: Register::get_base(rm),
                         index: Register::get_index(rm),
                         disp: Some(Displacement::Long(i16::from_le_bytes([bytes[1], bytes[2]]))),
