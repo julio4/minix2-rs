@@ -4,7 +4,11 @@ use minix2_rs::minix::Program;
 
 fn main() {
     env_logger::builder()
-        .filter_level(log::LevelFilter::Trace)
+        .format_timestamp(None)
+        .format_module_path(false)
+        .format_target(false)
+        // .filter_level(log::LevelFilter::Trace)
+        .filter_level(log::LevelFilter::Info)
         .init();
 
     let args: Vec<String> = std::env::args().collect();

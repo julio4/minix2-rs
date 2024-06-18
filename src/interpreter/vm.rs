@@ -1,7 +1,7 @@
 use super::memory::Memory;
 use super::register_set::RegisterSet;
 use crate::utils::{min, HexdumpFormatter};
-use crate::x86::{Address, Displacement};
+use crate::x86::{Address, Displacement, Register};
 use crate::{minix::Program, x86::IR};
 
 use log::trace;
@@ -40,7 +40,7 @@ impl From<Program> for VM {
 
 pub trait VmIrExecutable: OpcodeExecutable {
     // Fetch the next chunk from text memory from ip
-    fn fetch(&self) -> &[u8];
+    fn fetch(&self) -> Option<&[u8]>;
     // Decode the fetched chunk to an IR
     fn decode(&self, chunk: &[u8]) -> (IR, usize);
     // Execute the decoded instruction
@@ -52,26 +52,27 @@ pub trait VmIrExecutable: OpcodeExecutable {
 
 const MAX_INSTRUCTION_SIZE: usize = 15;
 impl VmIrExecutable for VM {
-    fn fetch(&self) -> &[u8] {
+    fn fetch(&self) -> Option<&[u8]> {
         let ip = self.ip;
-        self.text
-            .read_bytes(ip, min(MAX_INSTRUCTION_SIZE, self.text.len() - ip as usize))
+        if self.text.len() <= ip as usize {
+            return None;
+        }
+        Some(
+            self.text
+                .read_bytes(ip, min(MAX_INSTRUCTION_SIZE, self.text.len() - ip as usize)),
+        )
     }
 
     fn decode(&self, chunk: &[u8]) -> (IR, usize) {
         let (ins, ir_len) = match crate::disassembler::parse_instruction(chunk, self.ip.into()) {
             Ok((instruction, bytes_consumed)) => (instruction, bytes_consumed),
-            // Err(DisassemblerError::UnexpectedEOF) => {
-            //     (Instruction::new(IR::Undefined, text.to_vec()), text.len())
-            // }
+            // Err(DisassemblerError::UnexpectedEOF) => {}
             Err(e) => panic!("Error decoding instruction: {:?}", e),
         };
-        trace!("[DECODE] IR:\n{:?}\t{}", HexdumpFormatter(&ins.raw), ins.ir);
         (ins.ir, ir_len)
     }
 
     fn execute(&mut self, ir: IR) {
-        trace!("[EXECUTE] {:?}", ir);
         match ir {
             IR::Mov { dest, src, byte } => {
                 self.mov(dest, src, byte);
@@ -88,15 +89,49 @@ impl VmIrExecutable for VM {
     }
 
     fn run(&mut self) {
-        loop {
-            trace!("\nVM STATE: {}", self);
-            let ir = self.fetch();
+        trace!(" AX   BX   CX   DX   SP   BP   SI   DI   FLAGS IP");
+        while let Some(ir) = self.fetch() {
             let (decoded_ir, ir_len) = self.decode(ir);
+
+            // Trace with format:
+            //  AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP
+            // 0000 0000 0000 0000 0000 0000 0000 0000 ---- 0000:bb0000     mov bx, 000
+            trace!(
+                "{} \t{}",
+                {
+                    let mut regs = String::new();
+                    for reg in vec![
+                        Register::AX,
+                        Register::BX,
+                        Register::CX,
+                        Register::DX,
+                        Register::SP,
+                        Register::BP,
+                        Register::SI,
+                        Register::DI,
+                    ] {
+                        regs.push_str(&format!("{:04x} ", self.regs.get(reg)));
+                    }
+                    format!(
+                        "{} {:04x} {:04x}:{}",
+                        regs,
+                        self.flags,
+                        self.ip,
+                        &ir[..ir_len]
+                            .iter()
+                            .map(|b| format!("{:02x}", b))
+                            .collect::<String>(),
+                    )
+                },
+                decoded_ir
+            );
+
             self.execute(decoded_ir);
 
             // Increment the instruction pointer (ip) appropriately
             self.ip += ir_len as u16;
         }
+        trace!("Execution finished:\n{}", self);
     }
 }
 
@@ -132,16 +167,6 @@ impl VM {
     }
 }
 
-// Display for VM
-// IP:
-// FLAGS:
-// TEXT: HEXDUMP
-// DATA: HEXDUMP
-//
-// REG
-// AX:
-// BX:
-// ...
 impl std::fmt::Display for VM {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "IP: {:04x}", self.ip)?;
@@ -151,7 +176,7 @@ impl std::fmt::Display for VM {
         writeln!(f, "DATA:")?;
         writeln!(f, "{:?}", HexdumpFormatter(&self.data.data))?;
         writeln!(f, "REGS:")?;
-        writeln!(f, "{:?}", self.regs)?;
+        writeln!(f, "{}", self.regs)?;
         Ok(())
     }
 }

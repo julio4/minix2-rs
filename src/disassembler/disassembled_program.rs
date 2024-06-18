@@ -4,6 +4,7 @@ pub struct DisassembledProgram {
     pub instructions: Vec<Instruction>,
 }
 
+#[allow(unused_variables)]
 impl DisassembledProgram {
     pub fn new(instructions: Vec<Instruction>, data: Vec<u8>) -> Self {
         DisassembledProgram { instructions }

@@ -23,8 +23,17 @@ impl RegisterSet {
 
     pub fn set(&mut self, reg: Register, value: i16) {
         if let Some(val) = self.registers.get_mut(&reg) {
-            trace!("Set {:?}: {} (previous: {})", reg, value, *val);
+            trace!("Set {:?}: {:x} (previous: {:x})", reg, value, *val);
             *val = value;
         }
+    }
+}
+
+impl std::fmt::Display for RegisterSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for reg in Register::iter() {
+            write!(f, "{:?}: {:x}\n", reg, self.get(reg))?;
+        }
+        Ok(())
     }
 }

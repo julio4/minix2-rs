@@ -4,6 +4,7 @@ pub struct Memory {
     pub data: Vec<u8>,
 }
 
+#[allow(dead_code)]
 impl Memory {
     pub fn new(size: usize) -> Self {
         Memory {

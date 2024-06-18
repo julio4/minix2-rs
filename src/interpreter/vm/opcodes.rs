@@ -1,5 +1,5 @@
 use super::VM;
-use crate::x86::Operand;
+use crate::x86::{Operand, Register};
 use log::trace;
 
 pub trait OpcodeExecutable {
@@ -25,7 +25,35 @@ impl OpcodeExecutable for VM {
         match int_type {
             // Syscalls
             0x20 => {
-                trace!("SYSCALL");
+                // struct message {
+                //     uint16_t m_source;
+                //     uint16_t m_type;
+                //     union m_u;
+                // };
+                let message_struct_ea = self.regs.get(Register::BX) as u16;
+                let message_source = self.data.read_word(message_struct_ea);
+                let message_type = self.data.read_word(message_struct_ea + 2);
+
+                match message_type {
+                    1 => {
+                        trace!("<exit({})>", message_source);
+                    }
+                    4 => {
+                        // _sendrec
+                        let content_len = self.data.read_word(message_struct_ea + 6);
+                        let content_ea = self.data.read_word(message_struct_ea + 10);
+                        trace!(
+                            "<write({}, {:#04x}, {})>",
+                            message_source,
+                            content_ea,
+                            content_len
+                        );
+
+                        let content = self.data.read_bytes(content_ea, content_len as usize);
+                        print!("{}", String::from_utf8_lossy(content));
+                    }
+                    _ => unimplemented!(),
+                }
             }
             _ => unimplemented!(),
         }
