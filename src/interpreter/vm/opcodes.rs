@@ -1,23 +1,37 @@
 use super::VM;
-use crate::x86::{Operand, Register};
+use crate::{
+    interpreter::flag_set::Flag,
+    x86::{Operand, Register},
+};
 use log::trace;
 
 pub trait OpcodeExecutable {
     fn mov(&mut self, dest: Operand, src: Operand, byte: bool);
     fn int(&mut self, int_type: u8);
     fn add(&mut self, dest: Operand, src: Operand);
+    fn xor(&mut self, dest: Operand, src: Operand);
+    fn lea(&mut self, dest: Operand, src: Operand);
+    fn cmp(&mut self, dest: Operand, src: Operand);
+    fn jnb(&mut self, dest: Operand);
+    fn jne(&mut self, dest: Operand);
+    fn je(&mut self, dest: Operand);
+    fn test(&mut self, dest: Operand, src: Operand);
+    fn push(&mut self, src: Operand);
+    fn call(&mut self, dest: Operand);
+    fn in_(&mut self, dest: Operand, src: Operand);
+    fn loopnz(&mut self, dest: Operand);
+    fn or(&mut self, dest: Operand, src: Operand);
 }
 
 impl OpcodeExecutable for VM {
     fn mov(&mut self, dest: Operand, src: Operand, _byte: bool) {
-        let value = match src {
-            Operand::Register(reg) => self.regs.get(reg),
-            Operand::Immediate(value) => value as i16,
-            Operand::LongImmediate(value) => value as i16,
-            _ => unimplemented!(),
-        };
+        let value = self.into_value(src);
         match dest {
             Operand::Register(reg) => self.regs.set(reg, value),
+            Operand::MemoryAddress(address) => {
+                let ea = self.get_effective_address(address);
+                self.data.write_bytes(ea, &(value as u16).to_le_bytes());
+            }
             _ => unimplemented!(),
         }
     }
@@ -59,12 +73,7 @@ impl OpcodeExecutable for VM {
         }
     }
     fn add(&mut self, dest: Operand, src: Operand) {
-        let value = match src {
-            Operand::Register(reg) => self.regs.get(reg),
-            Operand::Immediate(value) => value as i16,
-            Operand::LongImmediate(value) => value as i16,
-            _ => unimplemented!(),
-        };
+        let value = self.into_value(src);
         if value == 0 {
             return;
         }
@@ -80,6 +89,112 @@ impl OpcodeExecutable for VM {
                     ea,
                     &(current_value.wrapping_add(value.try_into().unwrap()) as u16).to_le_bytes(),
                 );
+            }
+            _ => unimplemented!(),
+        }
+    }
+    fn xor(&mut self, dest: Operand, src: Operand) {
+        let value = self.into_value(src);
+        match dest {
+            Operand::Register(reg) => {
+                let current = self.regs.get(reg);
+                self.regs.set(reg, current ^ value);
+            }
+            _ => unimplemented!(),
+        }
+    }
+    fn lea(&mut self, dest: Operand, src: Operand) {
+        let address = match src {
+            Operand::MemoryAddress(address) => address,
+            _ => panic!("Invalid operand"),
+        };
+        match dest {
+            Operand::Register(reg) => {
+                let ea = self.get_effective_address(address);
+                self.regs.set(reg, ea as i16);
+            }
+            _ => panic!("Invalid operand"),
+        }
+    }
+    fn cmp(&mut self, dest: Operand, src: Operand) {
+        let value = self.into_value(src);
+        let current = self.into_value(dest);
+
+        let result = current.wrapping_sub(value);
+        self.flags.set(Flag::Zero, result == 0);
+        self.flags.set(Flag::Sign, result < 0);
+        self.flags.set(Flag::Carry, current < value);
+        self.flags.set(
+            Flag::Overflow,
+            (current < 0 && value > 0 && result > 0) || (current > 0 && value < 0 && result < 0),
+        );
+    }
+    fn jnb(&mut self, dest: Operand) {
+        let value = self.into_value(dest) as u16;
+        if !self.flags.get(Flag::Carry) {
+            self.ip = value;
+        }
+    }
+    fn jne(&mut self, dest: Operand) {
+        let value = self.into_value(dest) as u16;
+        if !self.flags.get(Flag::Zero) {
+            self.ip = value;
+        }
+    }
+    fn je(&mut self, dest: Operand) {
+        let value = self.into_value(dest) as u16;
+        if self.flags.get(Flag::Zero) {
+            self.ip = value;
+        }
+    }
+    fn test(&mut self, dest: Operand, src: Operand) {
+        let value = self.into_value(src);
+        match dest {
+            Operand::Register(reg) => {
+                let current = self.regs.get(reg);
+                let result = current & value;
+                self.flags.set(Flag::Zero, result == 0);
+                self.flags.set(Flag::Sign, result < 0);
+                self.flags.set(Flag::Carry, false);
+                self.flags.set(Flag::Overflow, false);
+            }
+            _ => unimplemented!(),
+        }
+    }
+    fn push(&mut self, src: Operand) {
+        let value = self.into_value(src) as u16;
+        let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;
+        self.data.write_word(ea, value as u16);
+    }
+    fn call(&mut self, dest: Operand) {
+        let value = self.into_value(dest) as u16;
+        let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;
+        self.data.write_word(ea, self.ip);
+        self.regs.set(Register::SP, ea as i16);
+        self.ip = value;
+    }
+    fn in_(&mut self, dest: Operand, src: Operand) {
+        let _port = self.into_value(src) as u16;
+        let value = 0x42;
+        match dest {
+            Operand::Register(reg) => self.regs.set(reg, value as i16),
+            _ => unimplemented!(),
+        }
+    }
+    fn loopnz(&mut self, dest: Operand) {
+        let value = self.into_value(dest) as u16;
+        let cx = self.regs.get(Register::CX) - 1;
+        self.regs.set(Register::CX, cx);
+        if cx != 0 && !self.flags.get(Flag::Zero) {
+            self.ip = value;
+        }
+    }
+    fn or(&mut self, dest: Operand, src: Operand) {
+        let value = self.into_value(src);
+        match dest {
+            Operand::Register(reg) => {
+                let current = self.regs.get(reg);
+                self.regs.set(reg, current | value);
             }
             _ => unimplemented!(),
         }
