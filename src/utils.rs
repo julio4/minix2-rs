@@ -1,6 +1,6 @@
 use std::fmt;
 
-// Implement hexdump style output formatter
+/// Hexdump style output formatter
 pub struct HexdumpFormatter<'a>(pub &'a [u8]);
 
 impl<'a> fmt::Debug for HexdumpFormatter<'a> {

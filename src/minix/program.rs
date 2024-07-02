@@ -5,6 +5,8 @@ use super::segment::{Data, Segment, Text};
 use std::fs::File;
 use std::io::Read;
 
+/// A `Program` is the main structure of this crate.
+/// It contains the header, text and data segment of a Minix2 binary program.
 pub struct Program {
     pub header: Header,
     pub text_segment: Segment<Text>,

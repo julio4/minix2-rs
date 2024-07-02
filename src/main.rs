@@ -1,4 +1,5 @@
 use env_logger;
+// use minix2_rs::disassembler::Disassemblable;
 use minix2_rs::interpreter::Interpretable;
 use minix2_rs::minix::Program;
 
@@ -25,6 +26,7 @@ fn main() {
 
     // Disassembler
     // let disassembled = program.disassemble().unwrap();
+    // println!("{}", disassembled);
 
     // Interpreter
     program.interpret();

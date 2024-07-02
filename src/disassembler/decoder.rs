@@ -5,6 +5,7 @@ use crate::{
     x86::{Instruction, IR},
 };
 
+/// This trait can be used to disassemble a given program binary.
 pub trait Disassemblable {
     fn disassemble(&self) -> Result<DisassembledProgram, DisassemblerError>;
 }
@@ -36,6 +37,7 @@ impl Disassemblable for Program {
     }
 }
 
+/// Read a binary from given file and disassemble it.
 pub fn decode(args: Vec<String>) -> Result<String, DisassemblerError> {
     if args.len() < 2 {
         return Err(DisassemblerError::InvalidArgs);

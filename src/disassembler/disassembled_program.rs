@@ -1,5 +1,6 @@
 use crate::x86::{Instruction, IR};
 
+/// The sequence of instructions that have been disassembled from a given program binary.
 pub struct DisassembledProgram {
     pub instructions: Vec<Instruction>,
 }

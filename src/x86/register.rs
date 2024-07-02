@@ -1,3 +1,4 @@
+/// Register enum for x86 architecture.
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Hash)]
 pub enum Register {
     AL,

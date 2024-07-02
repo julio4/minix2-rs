@@ -1,6 +1,8 @@
 use super::displacement::Displacement;
 use super::Register;
 
+/// Addressing mode, 
+/// can be of different types, such as direct, indirect, with displacement, ...
 #[derive(Debug, PartialEq)]
 pub struct Address {
     pub base: Option<Register>,
@@ -104,7 +106,7 @@ mod memory_display_test {
     }
 
     #[test]
-    fn test_memory_addressdisplay_with_base_index_displacement() {
+    fn test_memory_address_display_with_base_index_displacement() {
         let address = Address {
             base: Some(Register::BX),
             index: Some(Register::SI),

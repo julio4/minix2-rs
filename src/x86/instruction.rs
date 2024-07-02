@@ -1,5 +1,6 @@
 use super::Operand;
 
+/// `IR` is the enum of possible instructions, see `Instruction` as well
 #[derive(Debug, PartialEq)]
 pub enum IR {
     Mov {
@@ -250,6 +251,7 @@ pub enum IR {
     Undefined,
 }
 
+///  `Instruction` is the struct that represent a CPU instruction, and holds both the `IR` kind and the raw bytes of the instruction.
 #[derive(Debug, PartialEq)]
 pub struct Instruction {
     pub ir: IR,
