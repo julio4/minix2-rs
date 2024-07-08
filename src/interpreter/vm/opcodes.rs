@@ -153,6 +153,21 @@ impl OpcodeExecutable for VM {
         self.flags.set(Flag::Zero, result == 0);
         self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
     }
+    fn sub(&mut self, dest: Operand, src: Operand) {
+      let src_value = self.read_value(&src);
+      let dest_value = self.read_value(&dest);
+      let result = dest_value & src_value;
+
+      self.write_value(&dest, result as u16);
+
+      // Clear
+      self.flags.clear(Flag::Carry);
+      self.flags.clear(Flag::Overflow);
+      // SF, ZF, PF
+      self.flags.set(Flag::Sign, result < 0);
+      self.flags.set(Flag::Zero, result == 0);
+      self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
+  }
     fn push(&mut self, src: Operand) {
         let value = self.read_value(&src) as u16;
         let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;

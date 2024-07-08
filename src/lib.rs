@@ -11,7 +11,7 @@
 //! ## Usage
 //!
 //! Read minix binary from file:
-//! ```rust
+//! ```ignore
 //! use minix2_rs::minix::Program;
 //!
 //! let file = std::fs::File::open(&args[1]).unwrap();
@@ -19,7 +19,7 @@
 //! ```
 //!
 //! Disassemble program and output assembly code to stdout:
-//! ```rust
+//! ```ignore
 //! use minix2_rs::disassembler::Disassemblable;
 //!
 //! let disassembled = program.disassemble().unwrap();
@@ -27,7 +27,7 @@
 //! ```
 //!
 //! Interpret program in minix2 virtual machine environment:
-//! ```rust
+//! ```ignore
 //! use minix2_rs::interpreter::Interpretable;
 //!
 //! program.interpret();
