@@ -2,9 +2,9 @@ use super::displacement::Displacement;
 use super::Address;
 use super::Register;
 
-/// An operand represent the possible values that can be used as an argument for instructions, 
+/// An operand represent the possible values that can be used as an argument for instructions,
 /// such as registers, memory addresses, immediates, ...
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Operand {
     Register(Register),
     Immediate(u8),

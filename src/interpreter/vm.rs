@@ -24,16 +24,35 @@ struct VM {
     pub flags: FlagSet,
 }
 
+impl Default for VM {
+    fn default() -> Self {
+        let text = Memory::new(0);
+        let data = Memory::new(0x1000);
+
+        let regs = RegisterSet::new();
+        let flags = FlagSet::new();
+        let ip = 0;
+        VM {
+            ip,
+            text,
+            data,
+            regs,
+            flags,
+        }
+    }
+}
+
 impl From<Program> for VM {
     fn from(program: Program) -> Self {
         let text = Memory::from(program.text_segment.data);
 
-        let size = 0x1000;
-        let mut data = Memory::new(size);
+        let mut data = Memory::new(0x10000);
         data.write_bytes(0, &program.data_segment.data);
 
         let mut regs = RegisterSet::new();
-        regs.set(Register::SP, (data.len() - 2) as i16);
+        regs.set(Register::SP, 0xffd0);
+        data.write_bytes(0xffd0, &0x1u16.to_le_bytes());
+
         let flags = FlagSet::new();
         let ip = 0;
         VM {
@@ -127,12 +146,15 @@ impl VmIrExecutable for VM {
             IR::Or { dest, src } => {
                 self.or(dest, src);
             }
+            IR::Sub { dest, src } => {
+                self.sub(dest, src);
+            }
             _ => panic!("{}: Not implemented", ir),
         }
     }
 
     fn run(&mut self) {
-        trace!(" AX   BX   CX   DX   SP   BP   SI   DI        IP");
+        trace!(" AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP");
         while let Some(ir) = self.fetch() {
             let (decoded_ir, ir_len) = self.decode(ir);
 
@@ -156,11 +178,29 @@ impl VmIrExecutable for VM {
                         regs.push_str(&format!("{:04x} ", self.regs.get(reg)));
                     }
                     let mut flags = String::new();
-                    for flag in Flag::iter() {
-                        flags.push_str(&format!("{}", self.flags.get(flag) as u8));
+                    if self.flags.get(Flag::Parity) {
+                        flags.push('P');
+                    } else {
+                        flags.push('-');
                     }
+                    if self.flags.get(Flag::Sign) {
+                        flags.push('S');
+                    } else {
+                        flags.push('-');
+                    }
+                    if self.flags.get(Flag::Zero) {
+                        flags.push('Z');
+                    } else {
+                        flags.push('-');
+                    }
+                    if self.flags.get(Flag::Carry) {
+                        flags.push('C');
+                    } else {
+                        flags.push('-');
+                    }
+
                     format!(
-                        "{} {} {:04x}:{}",
+                        "{}{} {:04x}:{}",
                         regs,
                         flags,
                         self.ip,
@@ -195,11 +235,11 @@ impl Interpretable for Program {
 impl VM {
     fn get_effective_address(&self, address: Address) -> u16 {
         let base = match address.base {
-            Some(b) => self.regs.get(b),
+            Some(b) => self.regs.get(b) as i16,
             None => 0,
         };
         let index = match address.index {
-            Some(i) => self.regs.get(i),
+            Some(i) => self.regs.get(i) as i16,
             None => 0,
         };
         let disp = match address.disp {
@@ -213,17 +253,30 @@ impl VM {
         base.wrapping_add(index).wrapping_add(disp) as u16
     }
 
-    fn into_value(&self, operand: Operand) -> i16 {
+    fn read_value(&self, operand: &Operand) -> i16 {
         match operand {
-            Operand::Register(reg) => self.regs.get(reg),
-            Operand::Immediate(value) => value as i16,
-            Operand::LongImmediate(value) => value as i16,
-            Operand::SignExtendedImmediate(value) => value as i16,
+            Operand::Register(reg) => self.regs.get(*reg) as i16,
+            Operand::Immediate(value) => *value as i16,
+            Operand::LongImmediate(value) => *value as i16,
+            Operand::SignExtendedImmediate(value) => *value as i16,
             Operand::MemoryAddress(address) => {
-                let ea = self.get_effective_address(address);
-                self.data.read_word(ea) as i16
+                let ea = self.get_effective_address(*address);
+                let ev = self.data.read_word(ea) as i16;
+                trace!(";[{:04x}]{:04x}", ea, ev);
+                ev
             }
-            Operand::Displacement(value) => self.ip.wrapping_add(value.into()) as i16,
+            Operand::Displacement(value) => self.ip.wrapping_add((*value).into()) as i16,
+        }
+    }
+
+    fn write_value(&mut self, operand: &Operand, value: u16) {
+        match operand {
+            Operand::Register(reg) => self.regs.set(*reg, value),
+            Operand::MemoryAddress(address) => {
+                let ea = self.get_effective_address(*address);
+                self.data.write_word(ea, value);
+            }
+            _ => panic!("Invalid operand"),
         }
     }
 }

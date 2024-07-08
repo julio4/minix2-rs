@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
 use crate::x86::Register;
-use log::trace;
 
 #[derive(Debug)]
 pub struct RegisterSet {
-    registers: HashMap<Register, i16>,
+    registers: HashMap<Register, u16>,
 }
 
 impl RegisterSet {
@@ -17,13 +16,12 @@ impl RegisterSet {
         Self { registers }
     }
 
-    pub fn get(&self, reg: Register) -> i16 {
+    pub fn get(&self, reg: Register) -> u16 {
         *self.registers.get(&reg).expect("Unknown register")
     }
 
-    pub fn set(&mut self, reg: Register, value: i16) {
+    pub fn set(&mut self, reg: Register, value: u16) {
         if let Some(val) = self.registers.get_mut(&reg) {
-            trace!("Set {:?}: {:x} (previous: {:x})", reg, value, *val);
             *val = value;
         }
     }

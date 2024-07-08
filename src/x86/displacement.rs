@@ -1,5 +1,5 @@
 /// Displacement is a value that is added to an address to access a memory location. Similar to an offset.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Displacement {
     Short(i8),
     Long(i16),

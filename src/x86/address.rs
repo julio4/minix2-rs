@@ -1,9 +1,9 @@
 use super::displacement::Displacement;
 use super::Register;
 
-/// Addressing mode, 
+/// Addressing mode,
 /// can be of different types, such as direct, indirect, with displacement, ...
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Address {
     pub base: Option<Register>,
     pub index: Option<Register>,

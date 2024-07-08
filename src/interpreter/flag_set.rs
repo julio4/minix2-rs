@@ -1,4 +1,3 @@
-use log::trace;
 use std::collections::HashMap;
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Hash)]
@@ -11,6 +10,8 @@ pub enum Flag {
     Direction,
     Interrupt,
     Trap,
+    Aux,
+    PageFault,
 }
 
 impl Flag {
@@ -24,6 +25,8 @@ impl Flag {
             Flag::Direction,
             Flag::Interrupt,
             Flag::Trap,
+            Flag::Aux,
+            Flag::PageFault,
         ]
         .iter()
         .copied()
@@ -50,9 +53,12 @@ impl FlagSet {
 
     pub fn set(&mut self, flag: Flag, value: bool) {
         if let Some(val) = self.flags.get_mut(&flag) {
-            trace!("Set {:?}: {} (previous: {})", flag, value, *val);
             *val = value;
         }
+    }
+
+    pub fn clear(&mut self, flag: Flag) {
+        self.set(flag, false);
     }
 }
 

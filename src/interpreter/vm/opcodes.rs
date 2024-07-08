@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use super::VM;
 use crate::{
     interpreter::flag_set::Flag,
@@ -21,19 +23,13 @@ pub trait OpcodeExecutable {
     fn in_(&mut self, dest: Operand, src: Operand);
     fn loopnz(&mut self, dest: Operand);
     fn or(&mut self, dest: Operand, src: Operand);
+    fn sub(&mut self, dest: Operand, src: Operand);
 }
 
 impl OpcodeExecutable for VM {
     fn mov(&mut self, dest: Operand, src: Operand, _byte: bool) {
-        let value = self.into_value(src);
-        match dest {
-            Operand::Register(reg) => self.regs.set(reg, value),
-            Operand::MemoryAddress(address) => {
-                let ea = self.get_effective_address(address);
-                self.data.write_bytes(ea, &(value as u16).to_le_bytes());
-            }
-            _ => unimplemented!(),
-        }
+        let src_value = self.read_value(&src);
+        self.write_value(&dest, src_value as u16);
     }
     fn int(&mut self, int_type: u8) {
         match int_type {
@@ -51,6 +47,7 @@ impl OpcodeExecutable for VM {
                 match message_type {
                     1 => {
                         trace!("<exit({})>", message_source);
+                        exit(message_source as i32);
                     }
                     4 => {
                         // _sendrec
@@ -73,35 +70,34 @@ impl OpcodeExecutable for VM {
         }
     }
     fn add(&mut self, dest: Operand, src: Operand) {
-        let value = self.into_value(src);
-        if value == 0 {
-            return;
-        }
-        match dest {
-            Operand::Register(reg) => {
-                let current = self.regs.get(reg);
-                self.regs.set(reg, current.wrapping_add(value));
-            }
-            Operand::MemoryAddress(address) => {
-                let ea = self.get_effective_address(address);
-                let current_value = self.data.read_word(ea);
-                self.data.write_bytes(
-                    ea,
-                    &(current_value.wrapping_add(value.try_into().unwrap()) as u16).to_le_bytes(),
-                );
-            }
-            _ => unimplemented!(),
-        }
+        let src_value = self.read_value(&src);
+        let target_value = self.read_value(&dest);
+        let (result, overflow) = target_value.overflowing_add(src_value);
+
+        self.write_value(&dest, result as u16);
+
+        self.flags.set(Flag::Overflow, overflow);
+        self.flags.set(Flag::Sign, result < 0);
+        self.flags.set(Flag::Zero, result == 0);
+        self.flags
+            .set(Flag::Aux, (target_value & 0xf) + (src_value & 0xf) > 0xf);
+        self.flags.set(Flag::Carry, result < src_value);
+        self.flags.set(Flag::PageFault, false); // todo?
     }
     fn xor(&mut self, dest: Operand, src: Operand) {
-        let value = self.into_value(src);
-        match dest {
-            Operand::Register(reg) => {
-                let current = self.regs.get(reg);
-                self.regs.set(reg, current ^ value);
-            }
-            _ => unimplemented!(),
-        }
+        let src_value = self.read_value(&src);
+        let target_value = self.read_value(&dest);
+        let result = target_value ^ src_value;
+
+        self.write_value(&dest, result as u16);
+
+        // Clear
+        self.flags.clear(Flag::Overflow);
+        self.flags.clear(Flag::Carry);
+        // SF, ZF and PF based on result
+        self.flags.set(Flag::Sign, result < 0);
+        self.flags.set(Flag::Zero, result == 0);
+        self.flags.set(Flag::Parity, result.count_ones() % 2 == 0);
     }
     fn lea(&mut self, dest: Operand, src: Operand) {
         let address = match src {
@@ -111,78 +107,75 @@ impl OpcodeExecutable for VM {
         match dest {
             Operand::Register(reg) => {
                 let ea = self.get_effective_address(address);
-                self.regs.set(reg, ea as i16);
+                self.regs.set(reg, ea);
             }
             _ => panic!("Invalid operand"),
         }
     }
     fn cmp(&mut self, dest: Operand, src: Operand) {
-        let value = self.into_value(src);
-        let current = self.into_value(dest);
+        let src_value = self.read_value(&src);
+        let dest_value = self.read_value(&dest);
+        let (result, overflow) = dest_value.overflowing_sub(src_value);
 
-        let result = current.wrapping_sub(value);
-        self.flags.set(Flag::Zero, result == 0);
+        self.flags.set(Flag::Carry, dest_value < src_value);
+        self.flags.set(Flag::Overflow, overflow);
         self.flags.set(Flag::Sign, result < 0);
-        self.flags.set(Flag::Carry, current < value);
-        self.flags.set(
-            Flag::Overflow,
-            (current < 0 && value > 0 && result > 0) || (current > 0 && value < 0 && result < 0),
-        );
+        self.flags.set(Flag::Zero, result == 0);
+        self.flags
+            .set(Flag::Aux, (dest_value & 0xf) < (src_value & 0xf));
+        self.flags.set(Flag::PageFault, false); // todo?
     }
     fn jnb(&mut self, dest: Operand) {
-        let value = self.into_value(dest) as u16;
         if !self.flags.get(Flag::Carry) {
-            self.ip = value;
+            self.ip = self.read_value(&dest) as u16;
         }
     }
     fn jne(&mut self, dest: Operand) {
-        let value = self.into_value(dest) as u16;
         if !self.flags.get(Flag::Zero) {
-            self.ip = value;
+            self.ip = self.read_value(&dest) as u16;
         }
     }
     fn je(&mut self, dest: Operand) {
-        let value = self.into_value(dest) as u16;
         if self.flags.get(Flag::Zero) {
-            self.ip = value;
+            self.ip = self.read_value(&dest) as u16;
         }
     }
     fn test(&mut self, dest: Operand, src: Operand) {
-        let value = self.into_value(src);
-        match dest {
-            Operand::Register(reg) => {
-                let current = self.regs.get(reg);
-                let result = current & value;
-                self.flags.set(Flag::Zero, result == 0);
-                self.flags.set(Flag::Sign, result < 0);
-                self.flags.set(Flag::Carry, false);
-                self.flags.set(Flag::Overflow, false);
-            }
-            _ => unimplemented!(),
-        }
+        let src_value = self.read_value(&src);
+        let dest_value = self.read_value(&dest);
+        let result = dest_value & src_value;
+
+        // Clear
+        self.flags.clear(Flag::Carry);
+        self.flags.clear(Flag::Overflow);
+        // SF, ZF, PF
+        self.flags.set(Flag::Sign, result < 0);
+        self.flags.set(Flag::Zero, result == 0);
+        self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
     }
     fn push(&mut self, src: Operand) {
-        let value = self.into_value(src) as u16;
+        let value = self.read_value(&src) as u16;
         let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;
         self.data.write_word(ea, value as u16);
+        // todo
     }
     fn call(&mut self, dest: Operand) {
-        let value = self.into_value(dest) as u16;
+        let value = self.read_value(&dest) as u16;
         let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;
         self.data.write_word(ea, self.ip);
-        self.regs.set(Register::SP, ea as i16);
+        self.regs.set(Register::SP, ea);
         self.ip = value;
     }
     fn in_(&mut self, dest: Operand, src: Operand) {
-        let _port = self.into_value(src) as u16;
+        let _port = self.read_value(&src) as u16;
         let value = 0x42;
         match dest {
-            Operand::Register(reg) => self.regs.set(reg, value as i16),
+            Operand::Register(reg) => self.regs.set(reg, value),
             _ => unimplemented!(),
         }
     }
     fn loopnz(&mut self, dest: Operand) {
-        let value = self.into_value(dest) as u16;
+        let value = self.read_value(&dest) as u16;
         let cx = self.regs.get(Register::CX) - 1;
         self.regs.set(Register::CX, cx);
         if cx != 0 && !self.flags.get(Flag::Zero) {
@@ -190,11 +183,11 @@ impl OpcodeExecutable for VM {
         }
     }
     fn or(&mut self, dest: Operand, src: Operand) {
-        let value = self.into_value(src);
+        let value = self.read_value(&src);
         match dest {
             Operand::Register(reg) => {
-                let current = self.regs.get(reg);
-                self.regs.set(reg, current | value);
+                let current = self.regs.get(reg) as i16;
+                self.regs.set(reg, (current | value) as u16);
             }
             _ => unimplemented!(),
         }
