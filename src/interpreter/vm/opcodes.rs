@@ -21,6 +21,8 @@ pub trait OpcodeExecutable {
     fn push(&mut self, src: Operand);
     fn call(&mut self, dest: Operand);
     fn in_(&mut self, dest: Operand, src: Operand);
+    fn loop_(&mut self, dest: Operand);
+    fn loopz(&mut self, dest: Operand);
     fn loopnz(&mut self, dest: Operand);
     fn or(&mut self, dest: Operand, src: Operand);
     fn sub(&mut self, dest: Operand, src: Operand);
@@ -154,20 +156,20 @@ impl OpcodeExecutable for VM {
         self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
     }
     fn sub(&mut self, dest: Operand, src: Operand) {
-      let src_value = self.read_value(&src);
-      let dest_value = self.read_value(&dest);
-      let result = dest_value & src_value;
+        let src_value = self.read_value(&src);
+        let dest_value = self.read_value(&dest);
+        let result = dest_value & src_value;
 
-      self.write_value(&dest, result as u16);
+        self.write_value(&dest, result as u16);
 
-      // Clear
-      self.flags.clear(Flag::Carry);
-      self.flags.clear(Flag::Overflow);
-      // SF, ZF, PF
-      self.flags.set(Flag::Sign, result < 0);
-      self.flags.set(Flag::Zero, result == 0);
-      self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
-  }
+        // Clear
+        self.flags.clear(Flag::Carry);
+        self.flags.clear(Flag::Overflow);
+        // SF, ZF, PF
+        self.flags.set(Flag::Sign, result < 0);
+        self.flags.set(Flag::Zero, result == 0);
+        self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
+    }
     fn push(&mut self, src: Operand) {
         let value = self.read_value(&src) as u16;
         let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;
@@ -187,6 +189,22 @@ impl OpcodeExecutable for VM {
         match dest {
             Operand::Register(reg) => self.regs.set(reg, value),
             _ => unimplemented!(),
+        }
+    }
+    fn loop_(&mut self, dest: Operand) {
+        let value = self.read_value(&dest) as u16;
+        let cx = self.regs.get(Register::CX) - 1;
+        self.regs.set(Register::CX, cx);
+        if cx != 0 {
+            self.ip = value;
+        }
+    }
+    fn loopz(&mut self, dest: Operand) {
+        let value = self.read_value(&dest) as u16;
+        let cx = self.regs.get(Register::CX) - 1;
+        self.regs.set(Register::CX, cx);
+        if cx != 0 && self.flags.get(Flag::Zero) {
+            self.ip = value;
         }
     }
     fn loopnz(&mut self, dest: Operand) {

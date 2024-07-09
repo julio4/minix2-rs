@@ -140,6 +140,12 @@ impl VmIrExecutable for VM {
             IR::In { dest, src } => {
                 self.in_(dest, src);
             }
+            IR::Loop { dest } => {
+                self.loop_(dest);
+            }
+            IR::Loopz { dest } => {
+                self.loopz(dest);
+            }
             IR::Loopnz { dest } => {
                 self.loopnz(dest);
             }
