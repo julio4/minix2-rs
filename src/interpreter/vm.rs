@@ -1,3 +1,4 @@
+use super::error::InterpreterError;
 use super::flag_set::FlagSet;
 use super::memory::Memory;
 use super::register_set::RegisterSet;
@@ -74,7 +75,7 @@ pub trait VmIrExecutable: OpcodeExecutable {
     // + Implicit store
     fn execute(&mut self, ir: IR);
     // Run the VM from the program loaded in memory
-    fn run(&mut self);
+    fn run(&mut self) -> Result<(), InterpreterError>;
 }
 
 const MAX_INSTRUCTION_SIZE: usize = 15;
@@ -159,8 +160,9 @@ impl VmIrExecutable for VM {
         }
     }
 
-    fn run(&mut self) {
+    fn run(&mut self) -> Result<(), InterpreterError> {
         trace!(" AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP");
+        let mut cycle_count = 0;
         while let Some(ir) = self.fetch() {
             let (decoded_ir, ir_len) = self.decode(ir);
 
@@ -223,17 +225,25 @@ impl VmIrExecutable for VM {
 
             // Increment the instruction pointer (ip) appropriately
             self.ip += ir_len as u16;
+
+            // Check cycle count
+            cycle_count += 1;
+            if cycle_count > 10000 {
+                return Err(InterpreterError::CycleLimitExceeded);
+            }
         }
+
         // trace!("Execution finished:\n{}", self);
+        Ok(())
     }
 }
 
 pub trait Interpretable {
-    fn interpret(self);
+    fn interpret(self) -> Result<(), InterpreterError>;
 }
 
 impl Interpretable for Program {
-    fn interpret(self) {
+    fn interpret(self) -> Result<(), InterpreterError> {
         VM::from(self).run()
     }
 }
@@ -300,7 +310,3 @@ impl std::fmt::Display for VM {
         Ok(())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-// }

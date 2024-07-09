@@ -1,3 +1,4 @@
+mod error;
 mod flag_set;
 mod memory;
 mod register_set;

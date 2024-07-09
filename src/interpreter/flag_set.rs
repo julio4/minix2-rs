@@ -31,6 +31,15 @@ impl Flag {
         .iter()
         .copied()
     }
+
+    pub fn result(&self, value: i16) -> bool {
+        match self {
+            Flag::Zero => value == 0,
+            Flag::Sign => value < 0,
+            Flag::Parity => value.count_ones() % 2 == 0,
+            _ => unreachable!("Flag not supported"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -55,6 +64,12 @@ impl FlagSet {
         if let Some(val) = self.flags.get_mut(&flag) {
             *val = value;
         }
+    }
+
+    pub fn set_szp(&mut self, value: i16) {
+        self.set(Flag::Zero, Flag::Zero.result(value));
+        self.set(Flag::Sign, Flag::Sign.result(value));
+        self.set(Flag::Parity, Flag::Parity.result(value));
     }
 
     pub fn clear(&mut self, flag: Flag) {

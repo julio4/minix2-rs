@@ -29,5 +29,5 @@ fn main() {
     // println!("{}", disassembled);
 
     // Interpreter
-    program.interpret();
+    program.interpret().unwrap();
 }

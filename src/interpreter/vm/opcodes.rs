@@ -79,12 +79,10 @@ impl OpcodeExecutable for VM {
         self.write_value(&dest, result as u16);
 
         self.flags.set(Flag::Overflow, overflow);
-        self.flags.set(Flag::Sign, result < 0);
-        self.flags.set(Flag::Zero, result == 0);
+        self.flags.set(Flag::Carry, result < src_value);
+        self.flags.set_szp(result);
         self.flags
             .set(Flag::Aux, (target_value & 0xf) + (src_value & 0xf) > 0xf);
-        self.flags.set(Flag::Carry, result < src_value);
-        self.flags.set(Flag::PageFault, false); // todo?
     }
     fn xor(&mut self, dest: Operand, src: Operand) {
         let src_value = self.read_value(&src);
@@ -97,9 +95,7 @@ impl OpcodeExecutable for VM {
         self.flags.clear(Flag::Overflow);
         self.flags.clear(Flag::Carry);
         // SF, ZF and PF based on result
-        self.flags.set(Flag::Sign, result < 0);
-        self.flags.set(Flag::Zero, result == 0);
-        self.flags.set(Flag::Parity, result.count_ones() % 2 == 0);
+        self.flags.set_szp(result);
     }
     fn lea(&mut self, dest: Operand, src: Operand) {
         let address = match src {
@@ -121,11 +117,9 @@ impl OpcodeExecutable for VM {
 
         self.flags.set(Flag::Carry, dest_value < src_value);
         self.flags.set(Flag::Overflow, overflow);
-        self.flags.set(Flag::Sign, result < 0);
-        self.flags.set(Flag::Zero, result == 0);
+        self.flags.set_szp(result);
         self.flags
             .set(Flag::Aux, (dest_value & 0xf) < (src_value & 0xf));
-        self.flags.set(Flag::PageFault, false); // todo?
     }
     fn jnb(&mut self, dest: Operand) {
         if !self.flags.get(Flag::Carry) {
@@ -151,9 +145,7 @@ impl OpcodeExecutable for VM {
         self.flags.clear(Flag::Carry);
         self.flags.clear(Flag::Overflow);
         // SF, ZF, PF
-        self.flags.set(Flag::Sign, result < 0);
-        self.flags.set(Flag::Zero, result == 0);
-        self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
+        self.flags.set_szp(result);
     }
     fn sub(&mut self, dest: Operand, src: Operand) {
         let src_value = self.read_value(&src);
@@ -166,9 +158,7 @@ impl OpcodeExecutable for VM {
         self.flags.clear(Flag::Carry);
         self.flags.clear(Flag::Overflow);
         // SF, ZF, PF
-        self.flags.set(Flag::Sign, result < 0);
-        self.flags.set(Flag::Zero, result == 0);
-        self.flags.set(Flag::PageFault, false); // todo? BitwiseXNOR(result[0:7]);
+        self.flags.set_szp(result);
     }
     fn push(&mut self, src: Operand) {
         let value = self.read_value(&src) as u16;
@@ -216,13 +206,16 @@ impl OpcodeExecutable for VM {
         }
     }
     fn or(&mut self, dest: Operand, src: Operand) {
-        let value = self.read_value(&src);
-        match dest {
-            Operand::Register(reg) => {
-                let current = self.regs.get(reg) as i16;
-                self.regs.set(reg, (current | value) as u16);
-            }
-            _ => unimplemented!(),
-        }
+        let src_value = self.read_value(&src);
+        let dest_value = self.read_value(&dest);
+        let result = dest_value | src_value;
+
+        self.write_value(&dest, result as u16);
+
+        // Clear
+        self.flags.clear(Flag::Overflow);
+        self.flags.clear(Flag::Carry);
+        // SF, ZF and PF based on result
+        self.flags.set_szp(result);
     }
 }
