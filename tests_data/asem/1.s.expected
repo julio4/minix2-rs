@@ -1,7 +1,1 @@
-0000: bb0000        mov bx, 0000
-0003: cd20          int 20
-0005: bb1000        mov bx, 0010
-0008: cd20          int 20
-000a: 0000          add [bx+si], al
-000c: 0000          add [bx+si], al
-000e: 0000          add [bx+si], al
+hello

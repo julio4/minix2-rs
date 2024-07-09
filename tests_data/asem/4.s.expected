@@ -1,14 +1,1 @@
-0000: 832e210020    sub [0021], 20
-0005: b90000        mov cx, 0000
-0008: 89c8          mov ax, cx
-000a: 89c3          mov bx, ax
-000c: cd20          int 20
-000e: bb1000        mov bx, 0010
-0011: cd20          int 20
-0013: 0000          add [bx+si], al
-0015: 0000          add [bx+si], al
-0017: 0000          add [bx+si], al
-0019: 0000          add [bx+si], al
-001b: 0000          add [bx+si], al
-001d: 0000          add [bx+si], al
-001f: 00            (undefined)
+hEllo

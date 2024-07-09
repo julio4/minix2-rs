@@ -63,62 +63,63 @@ mod tests {
         ];
         let result = decode(args).unwrap();
 
-        let expected = fs::read_to_string(format!("./tests_data/{}.expected", file)).unwrap();
+        let expected =
+            fs::read_to_string(format!("./tests_data/{}.disasm_expected", file)).unwrap();
         assert_eq!(result, expected);
     }
 
     #[test]
-    fn test_asem_1() {
+    fn test_decode_asem_1() {
         assert_disassemble("asem/1.s");
     }
 
     #[test]
-    fn test_asem_2() {
+    fn test_decode_asem_2() {
         assert_disassemble("asem/2.s");
     }
 
     #[test]
-    fn test_asem_3() {
+    fn test_decode_asem_3() {
         assert_disassemble("asem/3.s");
     }
 
     #[test]
-    fn test_asem_4() {
+    fn test_decode_asem_4() {
         assert_disassemble("asem/4.s");
     }
 
     #[test]
-    fn test_c_1() {
+    fn test_decode_c_1() {
         assert_disassemble("1.c");
     }
 
     #[test]
-    fn test_c_2() {
+    fn test_decode_c_2() {
         assert_disassemble("2.c");
     }
 
     #[test]
-    fn test_c_3() {
+    fn test_decode_c_3() {
         assert_disassemble("3.c");
     }
 
     #[test]
-    fn test_c_4() {
+    fn test_decode_c_4() {
         assert_disassemble("4.c");
     }
 
     #[test]
-    fn test_c_5() {
+    fn test_decode_c_5() {
         assert_disassemble("5.c");
     }
 
     #[test]
-    fn test_c_6() {
+    fn test_decode_c_6() {
         assert_disassemble("6.c");
     }
 
     #[test]
-    fn test_c_7() {
+    fn test_decode_c_7() {
         assert_disassemble("7.c");
     }
 }
