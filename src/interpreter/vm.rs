@@ -174,6 +174,9 @@ impl VmIrExecutable for VM {
             IR::Dec { dest } => {
                 self.dec(dest);
             }
+            IR::Cbw => {
+                self.cbw();
+            }
             _ => panic!("{}: Not implemented", ir),
         }
     }

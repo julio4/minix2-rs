@@ -32,6 +32,7 @@ pub trait OpcodeExecutable {
     fn or(&mut self, dest: Operand, src: Operand);
     fn sub(&mut self, dest: Operand, src: Operand);
     fn dec(&mut self, dest: Operand);
+    fn cbw(&mut self);
 }
 
 impl OpcodeExecutable for VM {
@@ -61,19 +62,23 @@ impl OpcodeExecutable for VM {
                         // _sendrec
                         let content_len = self.data.read_word(message_struct_ea + 6);
                         let content_ea = self.data.read_word(message_struct_ea + 10);
-                        trace!(
-                            "<write({}, {:#04x}, {})>",
-                            message_source,
-                            content_ea,
-                            content_len
-                        );
                         // set AX to 0
                         self.regs.set(Register::AX, 0);
                         // Return nb of bytes written
                         self.data.write_word(message_struct_ea + 2, content_len);
 
-                        let content = self.data.read_bytes(content_ea, content_len as usize);
-                        print!("{}", String::from_utf8_lossy(content));
+                        let content = String::from_utf8_lossy(
+                            self.data.read_bytes(content_ea, content_len as usize),
+                        );
+                        trace!(
+                            "<write({}, {:#04x}, {}){} => {}>",
+                            message_source,
+                            content_ea,
+                            content_len,
+                            content,
+                            content_len
+                        );
+                        print!("{}", content);
                     }
                     _ => unimplemented!(),
                 }
@@ -274,5 +279,9 @@ impl OpcodeExecutable for VM {
         self.flags.clear(Flag::Overflow);
         // SF, ZF and PF based on result
         self.flags.set_szp(result);
+    }
+    fn cbw(&mut self) {
+        let al = self.regs.get(Register::AL) as i8;
+        self.regs.set(Register::AX, (al as i16).try_into().unwrap());
     }
 }
