@@ -8,8 +8,8 @@ fn main() {
         .format_timestamp(None)
         .format_module_path(false)
         .format_target(false)
-        // .filter_level(log::LevelFilter::Trace)
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(log::LevelFilter::Trace)
+        // .filter_level(log::LevelFilter::Info)
         .init();
 
     let args: Vec<String> = std::env::args().collect();

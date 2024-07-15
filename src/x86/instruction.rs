@@ -168,7 +168,7 @@ pub enum IR {
         short: bool,
     },
     Ret {
-        dest: Option<Operand>,
+        src: Option<Operand>,
     },
     Je {
         dest: Operand,
@@ -405,8 +405,8 @@ impl std::fmt::Display for IR {
             IR::Jmp { dest, short } => {
                 write!(f, "jmp {}{}", if *short { "short " } else { "" }, dest)
             }
-            IR::Ret { dest } => match dest {
-                Some(dest) => write!(f, "ret {}", dest),
+            IR::Ret { src } => match src {
+                Some(src) => write!(f, "ret {}", src),
                 None => write!(f, "ret"),
             },
             IR::Je { dest } => write!(f, "je {}", dest),

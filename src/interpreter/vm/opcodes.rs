@@ -14,18 +14,24 @@ pub trait OpcodeExecutable {
     fn xor(&mut self, dest: Operand, src: Operand);
     fn lea(&mut self, dest: Operand, src: Operand);
     fn cmp(&mut self, dest: Operand, src: Operand);
+    fn jmp(&mut self, dest: Operand);
     fn jnb(&mut self, dest: Operand);
     fn jne(&mut self, dest: Operand);
     fn je(&mut self, dest: Operand);
+    fn jl(&mut self, dest: Operand);
+    fn jnl(&mut self, dest: Operand);
     fn test(&mut self, dest: Operand, src: Operand);
     fn push(&mut self, src: Operand);
+    fn pop(&mut self, dest: Operand);
     fn call(&mut self, dest: Operand);
+    fn ret(&mut self, src: Option<Operand>);
     fn in_(&mut self, dest: Operand, src: Operand);
     fn loop_(&mut self, dest: Operand);
     fn loopz(&mut self, dest: Operand);
     fn loopnz(&mut self, dest: Operand);
     fn or(&mut self, dest: Operand, src: Operand);
     fn sub(&mut self, dest: Operand, src: Operand);
+    fn dec(&mut self, dest: Operand);
 }
 
 impl OpcodeExecutable for VM {
@@ -61,6 +67,10 @@ impl OpcodeExecutable for VM {
                             content_ea,
                             content_len
                         );
+                        // set AX to 0
+                        self.regs.set(Register::AX, 0);
+                        // Return nb of bytes written
+                        self.data.write_word(message_struct_ea + 2, content_len);
 
                         let content = self.data.read_bytes(content_ea, content_len as usize);
                         print!("{}", String::from_utf8_lossy(content));
@@ -73,16 +83,16 @@ impl OpcodeExecutable for VM {
     }
     fn add(&mut self, dest: Operand, src: Operand) {
         let src_value = self.read_value(&src);
-        let target_value = self.read_value(&dest);
-        let (result, overflow) = target_value.overflowing_add(src_value);
+        let dest_value = self.read_value(&dest);
+        let (result, overflow) = dest_value.overflowing_add(src_value);
 
         self.write_value(&dest, result as u16);
 
         self.flags.set(Flag::Overflow, overflow);
-        self.flags.set(Flag::Carry, result < src_value);
+        self.flags.set(Flag::Carry, result < dest_value);
         self.flags.set_szp(result);
         self.flags
-            .set(Flag::Aux, (target_value & 0xf) + (src_value & 0xf) > 0xf);
+            .set(Flag::Aux, (dest_value & 0xf) + (src_value & 0xf) > 0xf);
     }
     fn xor(&mut self, dest: Operand, src: Operand) {
         let src_value = self.read_value(&src);
@@ -121,6 +131,9 @@ impl OpcodeExecutable for VM {
         self.flags
             .set(Flag::Aux, (dest_value & 0xf) < (src_value & 0xf));
     }
+    fn jmp(&mut self, dest: Operand) {
+        self.ip = self.read_value(&dest) as u16;
+    }
     fn jnb(&mut self, dest: Operand) {
         if !self.flags.get(Flag::Carry) {
             self.ip = self.read_value(&dest) as u16;
@@ -133,6 +146,16 @@ impl OpcodeExecutable for VM {
     }
     fn je(&mut self, dest: Operand) {
         if self.flags.get(Flag::Zero) {
+            self.ip = self.read_value(&dest) as u16;
+        }
+    }
+    fn jl(&mut self, dest: Operand) {
+        if self.flags.get(Flag::Sign) != self.flags.get(Flag::Overflow) {
+            self.ip = self.read_value(&dest) as u16;
+        }
+    }
+    fn jnl(&mut self, dest: Operand) {
+        if self.flags.get(Flag::Sign) == self.flags.get(Flag::Overflow) {
             self.ip = self.read_value(&dest) as u16;
         }
     }
@@ -150,13 +173,13 @@ impl OpcodeExecutable for VM {
     fn sub(&mut self, dest: Operand, src: Operand) {
         let src_value = self.read_value(&src);
         let dest_value = self.read_value(&dest);
-        let result = dest_value & src_value;
+        let (result, overflow) = dest_value.overflowing_sub(src_value);
 
         self.write_value(&dest, result as u16);
 
-        // Clear
-        self.flags.clear(Flag::Carry);
-        self.flags.clear(Flag::Overflow);
+        // OF, CF
+        self.flags.set(Flag::Overflow, overflow);
+        self.flags.set(Flag::Carry, dest_value > src_value);
         // SF, ZF, PF
         self.flags.set_szp(result);
     }
@@ -164,13 +187,36 @@ impl OpcodeExecutable for VM {
         let value = self.read_value(&src) as u16;
         let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;
         self.data.write_word(ea, value as u16);
-        // todo
+        self.regs.set(Register::SP, ea);
+    }
+    fn pop(&mut self, dest: Operand) {
+        let ea = self.regs.get(Register::SP) as u16;
+        let value = self.data.read_word(ea);
+        self.regs.set(Register::SP, ea.wrapping_add(2));
+        match dest {
+            Operand::Register(reg) => self.regs.set(reg, value),
+            _ => unimplemented!(),
+        }
     }
     fn call(&mut self, dest: Operand) {
         let value = self.read_value(&dest) as u16;
         let ea = self.regs.get(Register::SP).wrapping_sub(2) as u16;
         self.data.write_word(ea, self.ip);
         self.regs.set(Register::SP, ea);
+        self.ip = value;
+    }
+    fn ret(&mut self, src: Option<Operand>) {
+        let ea = self.regs.get(Register::SP) as u16;
+        let value = self.data.read_word(ea);
+        let released_bytes = match src {
+            Some(src) => match src {
+                Operand::Immediate(value) => value as u16,
+                _ => panic!("Invalid operand"),
+            },
+            None => 0,
+        };
+        self.regs
+            .set(Register::SP, ea.wrapping_add(2 + released_bytes));
         self.ip = value;
     }
     fn in_(&mut self, dest: Operand, src: Operand) {
@@ -215,6 +261,17 @@ impl OpcodeExecutable for VM {
         // Clear
         self.flags.clear(Flag::Overflow);
         self.flags.clear(Flag::Carry);
+        // SF, ZF and PF based on result
+        self.flags.set_szp(result);
+    }
+    fn dec(&mut self, dest: Operand) {
+        let dest_value = self.read_value(&dest);
+        let result = dest_value.wrapping_sub(1);
+
+        self.write_value(&dest, result as u16);
+
+        // Clear
+        self.flags.clear(Flag::Overflow);
         // SF, ZF and PF based on result
         self.flags.set_szp(result);
     }

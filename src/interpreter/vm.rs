@@ -120,6 +120,9 @@ impl VmIrExecutable for VM {
             IR::Cmp { dest, src, byte: _ } => {
                 self.cmp(dest, src);
             }
+            IR::Jmp { dest, short: _ } => {
+                self.jmp(dest);
+            }
             IR::Jnb { dest } => {
                 self.jnb(dest);
             }
@@ -129,14 +132,26 @@ impl VmIrExecutable for VM {
             IR::Je { dest } => {
                 self.je(dest);
             }
+            IR::Jl { dest } => {
+                self.jl(dest);
+            }
+            IR::Jnl { dest } => {
+                self.jnl(dest);
+            }
             IR::Test { dest, src, byte: _ } => {
                 self.test(dest, src);
             }
             IR::Push { src } => {
                 self.push(src);
             }
+            IR::Pop { dest } => {
+                self.pop(dest);
+            }
             IR::Call { dest } => {
                 self.call(dest);
+            }
+            IR::Ret { src } => {
+                self.ret(src);
             }
             IR::In { dest, src } => {
                 self.in_(dest, src);
@@ -155,6 +170,9 @@ impl VmIrExecutable for VM {
             }
             IR::Sub { dest, src } => {
                 self.sub(dest, src);
+            }
+            IR::Dec { dest } => {
+                self.dec(dest);
             }
             _ => panic!("{}: Not implemented", ir),
         }
@@ -186,11 +204,12 @@ impl VmIrExecutable for VM {
                         regs.push_str(&format!("{:04x} ", self.regs.get(reg)));
                     }
                     let mut flags = String::new();
-                    if self.flags.get(Flag::Parity) {
-                        flags.push('P');
-                    } else {
-                        flags.push('-');
-                    }
+                    // if self.flags.get(Flag::Parity) {
+                    //     flags.push('P');
+                    // } else {
+                    //     flags.push('-');
+                    // }
+                    flags.push('-'); // ?
                     if self.flags.get(Flag::Sign) {
                         flags.push('S');
                     } else {
@@ -221,10 +240,10 @@ impl VmIrExecutable for VM {
                 decoded_ir
             );
 
-            self.execute(decoded_ir);
-
             // Increment the instruction pointer (ip) appropriately
             self.ip += ir_len as u16;
+
+            self.execute(decoded_ir);
 
             // Check cycle count
             cycle_count += 1;
@@ -281,7 +300,11 @@ impl VM {
                 trace!(";[{:04x}]{:04x}", ea, ev);
                 ev
             }
-            Operand::Displacement(value) => self.ip.wrapping_add((*value).into()) as i16,
+            Operand::Displacement(value) => match value {
+                Displacement::Short(d) => *d as i16,
+                Displacement::Long(d) => *d,
+            },
+            // DEBUG: `self.ip.wrapping_add((*value).into()) as i16``, if not this, then check disasm `call Displacement`, e.g. ir `e80500`, instead of `call Imm`
         }
     }
 

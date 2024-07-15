@@ -510,13 +510,13 @@ pub fn parse_instruction(
             let dest = u16::from_le_bytes([bytes[1], bytes[2]]);
             Ok((
                 IR::Ret {
-                    dest: Some(Operand::LongImmediate(dest)),
+                    src: Some(Operand::LongImmediate(dest)),
                 },
                 3,
             ))
         }
         // RET segment / intersegment
-        0xC3 | 0xCB => Ok((IR::Ret { dest: None }, 1)),
+        0xC3 | 0xCB => Ok((IR::Ret { src: None }, 1)),
         // LES
         0xC4 => {
             let (dest, src, bytes_consumed) = parse_mod_reg_rm_bytes(&bytes[1..], true)?;

@@ -663,10 +663,10 @@ fn test_std() {
 #[test]
 fn test_ret() {
     // Within segment
-    assert_parse!([0xc3], IR::Ret { dest: None });
+    assert_parse!([0xc3], IR::Ret { src: None });
 
     // Intersegment
-    assert_parse!([0xcb], IR::Ret { dest: None });
+    assert_parse!([0xcb], IR::Ret { src: None });
 }
 
 #[test]
