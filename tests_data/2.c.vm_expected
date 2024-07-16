@@ -91,7 +91,7 @@ ffa8 0008 ffe0 ffce ffa6 ffc0 0000 0000 -S-- 00de:b80400       mov ax, 0004
 0001 ffa8 0003 0004 ffc0 ffc0 0000 0000 -S-- 0149:5d           pop bp
 0001 ffa8 0003 0004 ffc2 ffca 0000 0000 -S-- 014a:c3           ret
 0001 ffa8 0003 0004 ffc4 ffca 0000 0000 -S-- 0059:83c406       add sp, 6
-0001 ffa8 0003 0004 ffca ffca 0000 0000 -S-- 005c:8a4604       mov al, [bp+4] ;[ffce]61
+0001 ffa8 0003 0004 ffca ffca 0000 0000 -S-- 005c:8a4604       mov al, [bp+4] ;[ffce]0061
 0061 ffa8 0003 0004 ffca ffca 0000 0000 -S-- 005f:98           cbw
 0061 ffa8 0003 0004 ffca ffca 0000 0000 -S-- 0060:e9e400       jmp 0147
 0061 ffa8 0003 0004 ffca ffca 0000 0000 -S-- 0147:89ec         mov sp, bp

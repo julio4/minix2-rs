@@ -42,6 +42,21 @@ impl Register {
         .iter()
         .copied()
     }
+
+    pub fn iter_16() -> impl Iterator<Item = Register> {
+        [
+            Register::AX,
+            Register::CX,
+            Register::DX,
+            Register::BX,
+            Register::SP,
+            Register::BP,
+            Register::SI,
+            Register::DI,
+        ]
+        .iter()
+        .copied()
+    }
 }
 
 impl Register {
@@ -93,6 +108,28 @@ impl Register {
 
     pub fn is_word_register(&self) -> bool {
         *self > Register::BH
+    }
+
+    pub fn is_low_byte(&self) -> bool {
+        *self < Register::AH
+    }
+
+    pub fn is_high_byte(&self) -> bool {
+        *self > Register::BL && *self < Register::AX
+    }
+
+    pub fn to_word_register(&self) -> Register {
+        match self {
+            Register::AL => Register::AX,
+            Register::CL => Register::CX,
+            Register::DL => Register::DX,
+            Register::BL => Register::BX,
+            Register::AH => Register::AX,
+            Register::CH => Register::CX,
+            Register::DH => Register::DX,
+            Register::BH => Register::BX,
+            _ => *self,
+        }
     }
 }
 

@@ -1,5 +1,3 @@
-use log::trace;
-
 use super::{VirtualMemory, VM};
 use crate::{
     interpreter::{error::OpcodeExecErrors, flag_set::Flag},
@@ -72,7 +70,7 @@ impl OpcodeExecutable for VM {
 
                 match message_type {
                     1 => {
-                        trace!("\n<exit({})>", message_source);
+                        self.trace(format!("\n<exit({})>", message_source).as_str());
                         exec_exit(message_source as i32);
                         return Err(OpcodeExecErrors::ExitCatch);
                     }
@@ -88,40 +86,34 @@ impl OpcodeExecutable for VM {
                         let content = String::from_utf8_lossy(
                             self.data.read_bytes(content_ea, content_len as usize),
                         );
-                        trace!(
-                            "\n<write({}, {:#06x}, {}){} => {}>",
-                            1,
-                            content_ea,
-                            content_len,
-                            content,
-                            content_len
+                        self.trace(
+                            format!(
+                                "\n<write({}, {:#06x}, {}){} => {}>",
+                                1, content_ea, content_len, content, content_len
+                            )
+                            .as_str(),
                         );
                         // if not trace
-                        if std::env::var("RUST_LOG").unwrap_or_default() != "trace" {
+                        if !self.trace {
                             print!("{}", content);
                         }
                         Ok(())
                     }
                     17 => {
                         // BRK
-                        trace!("\n<brk({})>", message_source);
-                        // trace!(
-                        //     "<brk({:#04x}) => {}>",
-                        //     message_source,
-                        //     content_ea,
-                        //     content_len,
-                        // );
+                        self.trace(format!("\n<brk({})>", message_source).as_str());
                         Ok(())
                     }
                     54 => {
                         // IOCTL
                         let content_len = self.data.read_word(message_struct_ea + 6);
                         let content_ea = self.data.read_word(message_struct_ea + 10);
-                        trace!(
-                            "<ioctl({}, {:#04x}, {:#04x})>",
-                            message_source,
-                            content_ea,
-                            content_len,
+                        self.trace(
+                            format!(
+                                "<ioctl({}, {:#04x}, {:#04x})>",
+                                message_source, content_ea, content_len,
+                            )
+                            .as_str(),
                         );
                         // What to do?
                         // set AX to 0

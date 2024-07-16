@@ -1,3 +1,5 @@
+use core::str;
+
 use super::error::{InterpreterError, OpcodeExecErrors};
 use super::flag_set::FlagSet;
 use super::memory::Memory;
@@ -6,8 +8,6 @@ use crate::interpreter::flag_set::Flag;
 use crate::utils::{min, HexdumpFormatter};
 use crate::x86::{Address, Displacement, Operand, Register};
 use crate::{minix::Program, x86::IR};
-
-use log::trace;
 
 // Opcode implementations
 mod opcodes;
@@ -23,6 +23,8 @@ struct VM {
     // registers, flags
     pub regs: RegisterSet,
     pub flags: FlagSet,
+    // configs
+    pub trace: bool,
 }
 
 impl Default for VM {
@@ -39,6 +41,7 @@ impl Default for VM {
             data,
             regs,
             flags,
+            trace: false,
         }
     }
 }
@@ -64,6 +67,7 @@ impl From<Program> for VM {
             data,
             regs,
             flags,
+            trace: false,
         }
     }
 }
@@ -143,7 +147,7 @@ impl VmIrExecutable for VM {
     }
 
     fn run(&mut self) -> Result<(), InterpreterError> {
-        trace!(" AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP\n");
+        self.trace(" AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP\n");
         let mut cycle_count = 0;
         while let Some(ir) = self.fetch() {
             let (decoded_ir, ir_len) = self.decode(ir);
@@ -155,60 +159,60 @@ impl VmIrExecutable for VM {
                 _ => {}
             }
 
-            // Trace with format:
-            //  AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP
-            // 0000 0000 0000 0000 0000 0000 0000 0000 ---- 0000:bb0000     mov bx, 000
-            trace!(
-                "{:<62} {}",
-                {
-                    let mut regs = String::new();
-                    for reg in vec![
-                        Register::AX,
-                        Register::BX,
-                        Register::CX,
-                        Register::DX,
-                        Register::SP,
-                        Register::BP,
-                        Register::SI,
-                        Register::DI,
-                    ] {
-                        regs.push_str(&format!("{:04x} ", self.regs.get(reg)));
-                    }
-                    let mut flags = String::new();
-                    // if self.flags.get(Flag::Parity) {
-                    //     flags.push('P');
-                    // } else {
-                    //     flags.push('-');
-                    // }
-                    flags.push('-'); // ?
-                    if self.flags.get(Flag::Sign) {
-                        flags.push('S');
-                    } else {
-                        flags.push('-');
-                    }
-                    if self.flags.get(Flag::Zero) {
-                        flags.push('Z');
-                    } else {
-                        flags.push('-');
-                    }
-                    if self.flags.get(Flag::Carry) {
-                        flags.push('C');
-                    } else {
-                        flags.push('-');
-                    }
+            self.trace(
+                format!(
+                    "{:<62} {}",
+                    {
+                        let mut regs = String::new();
+                        for reg in vec![
+                            Register::AX,
+                            Register::BX,
+                            Register::CX,
+                            Register::DX,
+                            Register::SP,
+                            Register::BP,
+                            Register::SI,
+                            Register::DI,
+                        ] {
+                            regs.push_str(&format!("{:04x} ", self.regs.get(reg)));
+                        }
+                        let mut flags = String::new();
+                        // if self.flags.get(Flag::Parity) {
+                        //     flags.push('P');
+                        // } else {
+                        //     flags.push('-');
+                        // }
+                        flags.push('-'); // ?
+                        if self.flags.get(Flag::Sign) {
+                            flags.push('S');
+                        } else {
+                            flags.push('-');
+                        }
+                        if self.flags.get(Flag::Zero) {
+                            flags.push('Z');
+                        } else {
+                            flags.push('-');
+                        }
+                        if self.flags.get(Flag::Carry) {
+                            flags.push('C');
+                        } else {
+                            flags.push('-');
+                        }
 
-                    format!(
-                        "{}{} {:04x}:{}",
-                        regs,
-                        flags,
-                        self.ip,
-                        &ir[..ir_len]
-                            .iter()
-                            .map(|b| format!("{:02x}", b))
-                            .collect::<String>(),
-                    )
-                },
-                decoded_ir
+                        format!(
+                            "{}{} {:04x}:{}",
+                            regs,
+                            flags,
+                            self.ip,
+                            &ir[..ir_len]
+                                .iter()
+                                .map(|b| format!("{:02x}", b))
+                                .collect::<String>(),
+                        )
+                    },
+                    decoded_ir
+                )
+                .as_str(),
             );
 
             // Increment the instruction pointer (ip) appropriately
@@ -218,7 +222,7 @@ impl VmIrExecutable for VM {
                 Ok(_) => {}
                 Err(e) => match e {
                     OpcodeExecErrors::ExitCatch => {
-                        trace!("\n");
+                        self.trace("\n");
                         return Ok(());
                     }
                     _ => {
@@ -227,26 +231,26 @@ impl VmIrExecutable for VM {
                 },
             };
 
-            trace!("\n");
+            self.trace("\n");
             // Check cycle count
             cycle_count += 1;
             if cycle_count > 999999 {
                 return Err(InterpreterError::CycleLimitExceeded);
             }
         }
-
-        // trace!("Execution finished:\n{}", self);
         Ok(())
     }
 }
 
 pub trait Interpretable {
-    fn interpret(self) -> Result<(), InterpreterError>;
+    fn interpret(self, trace: bool) -> Result<(), InterpreterError>;
 }
 
 impl Interpretable for Program {
-    fn interpret(self) -> Result<(), InterpreterError> {
-        VM::from(self).run()
+    fn interpret(self, trace: bool) -> Result<(), InterpreterError> {
+        let mut vm = VM::from(self);
+        vm.set_trace(trace);
+        vm.run()
     }
 }
 
@@ -281,21 +285,21 @@ impl VirtualMemory for Address {
     fn read_value(&self, vm: &VM) -> i16 {
         let ea = self.get_effective_address(vm);
         let ev = vm.data.read_word(ea) as i16;
-        trace!(" ;[{:04x}]{:04x}", ea, ev);
+        vm.trace(format!(" ;[{:04x}]{:04x}", ea, ev).as_str());
         ev
     }
 
     fn write_value(&self, vm: &mut VM, value: u16) {
         let ea = self.get_effective_address(vm);
         let ev = vm.data.read_word(ea);
-        trace!(" ;[{:04x}]{:04x}", ea, ev);
+        vm.trace(format!(" ;[{:04x}]{:04x}", ea, ev).as_str());
         vm.data.write_word(ea, value);
     }
 
     fn trace(&self, vm: &VM) {
         let ea = self.get_effective_address(vm);
         let ev = vm.data.read_word(ea);
-        trace!(" ;[{:04x}]{:04x}", ea, ev);
+        vm.trace(format!(" ;[{:04x}]{:04x}", ea, ev).as_str());
     }
 }
 
@@ -322,6 +326,16 @@ impl VM {
             _ => panic!("Invalid operand"),
         }
     }
+
+    fn set_trace(&mut self, trace: bool) {
+        self.trace = trace;
+    }
+
+    fn trace(&self, str: &str) {
+        if self.trace {
+            print!("{}", str);
+        }
+    }
 }
 
 impl std::fmt::Display for VM {
@@ -336,4 +350,22 @@ impl std::fmt::Display for VM {
         writeln!(f, "{}", self.regs)?;
         Ok(())
     }
+}
+
+pub fn vm_interpret(args: Vec<String>) {
+    // Args validation
+    if args.len() < 2 {
+        println!("Usage: {} <binary file> [-m]", args[0]);
+        return;
+    }
+
+    // Logger
+    let trace = args.len() > 2 && args[2] == "-m";
+
+    // Open file
+    let file = std::fs::File::open(&args[1]).unwrap();
+    let program = Program::from_file(file).unwrap();
+
+    // Interpreter
+    program.interpret(trace).unwrap();
 }
