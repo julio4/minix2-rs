@@ -1,5 +1,3 @@
-use log::trace;
-
 pub struct Memory {
     pub data: Vec<u8>,
 }
@@ -42,7 +40,6 @@ impl Memory {
     }
 
     pub fn write_bytes(&mut self, address: u16, data: &[u8]) {
-        trace!("WRITE[{:04X}]: {:?}", address, data);
         self.data[address as usize..(address as usize + data.len())].copy_from_slice(data);
     }
 

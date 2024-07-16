@@ -1,3 +1,5 @@
+#![feature(internal_output_capture)]
+
 //! This crate is a library for disassembling and interpreting Minix 2 binaries compiled for the 8086 CPU.
 //! It can be used as a virtual machine for Minix 2 binaries.
 //!

@@ -1,4 +1,4 @@
-use super::error::InterpreterError;
+use super::error::{InterpreterError, OpcodeExecErrors};
 use super::flag_set::FlagSet;
 use super::memory::Memory;
 use super::register_set::RegisterSet;
@@ -51,8 +51,10 @@ impl From<Program> for VM {
         data.write_bytes(0, &program.data_segment.data);
 
         let mut regs = RegisterSet::new();
-        regs.set(Register::SP, 0xffd0);
-        data.write_bytes(0xffd0, &0x1u16.to_le_bytes());
+        regs.set(Register::SP, 0xffda);
+        // Not sure for this
+        data.write_bytes(0xffda, &0x1u16.to_le_bytes());
+        data.write_bytes(0xffdc, &0xffe4u16.to_le_bytes());
 
         let flags = FlagSet::new();
         let ip = 0;
@@ -73,7 +75,7 @@ pub trait VmIrExecutable: OpcodeExecutable {
     fn decode(&self, chunk: &[u8]) -> (IR, usize);
     // Execute the decoded instruction
     // + Implicit store
-    fn execute(&mut self, ir: IR);
+    fn execute(&mut self, ir: IR) -> Result<(), OpcodeExecErrors>;
     // Run the VM from the program loaded in memory
     fn run(&mut self) -> Result<(), InterpreterError>;
 }
@@ -100,98 +102,64 @@ impl VmIrExecutable for VM {
         (ins.ir, ir_len)
     }
 
-    fn execute(&mut self, ir: IR) {
+    fn execute(&mut self, ir: IR) -> Result<(), OpcodeExecErrors> {
         match ir {
-            IR::Mov { dest, src, byte } => {
-                self.mov(dest, src, byte);
-            }
-            IR::Int { int_type } => {
-                self.int(int_type);
-            }
-            IR::Add { dest, src } => {
-                self.add(dest, src);
-            }
-            IR::Xor { dest, src } => {
-                self.xor(dest, src);
-            }
-            IR::Lea { dest, src } => {
-                self.lea(dest, src);
-            }
-            IR::Cmp { dest, src, byte: _ } => {
-                self.cmp(dest, src);
-            }
-            IR::Jmp { dest, short: _ } => {
-                self.jmp(dest);
-            }
-            IR::Jnb { dest } => {
-                self.jnb(dest);
-            }
-            IR::Jne { dest } => {
-                self.jne(dest);
-            }
-            IR::Je { dest } => {
-                self.je(dest);
-            }
-            IR::Jl { dest } => {
-                self.jl(dest);
-            }
-            IR::Jnl { dest } => {
-                self.jnl(dest);
-            }
-            IR::Test { dest, src, byte: _ } => {
-                self.test(dest, src);
-            }
-            IR::Push { src } => {
-                self.push(src);
-            }
-            IR::Pop { dest } => {
-                self.pop(dest);
-            }
-            IR::Call { dest } => {
-                self.call(dest);
-            }
-            IR::Ret { src } => {
-                self.ret(src);
-            }
-            IR::In { dest, src } => {
-                self.in_(dest, src);
-            }
-            IR::Loop { dest } => {
-                self.loop_(dest);
-            }
-            IR::Loopz { dest } => {
-                self.loopz(dest);
-            }
-            IR::Loopnz { dest } => {
-                self.loopnz(dest);
-            }
-            IR::Or { dest, src } => {
-                self.or(dest, src);
-            }
-            IR::Sub { dest, src } => {
-                self.sub(dest, src);
-            }
-            IR::Dec { dest } => {
-                self.dec(dest);
-            }
-            IR::Cbw => {
-                self.cbw();
-            }
+            IR::Mov { dest, src, byte } => self.mov(dest, src, byte),
+            IR::Int { int_type } => self.int(int_type),
+            IR::Add { dest, src } => self.add(dest, src),
+            IR::Xor { dest, src } => self.xor(dest, src),
+            IR::Lea { dest, src } => self.lea(dest, src),
+            IR::Cmp { dest, src, byte: _ } => self.cmp(dest, src),
+            IR::Jmp { dest, short: _ } => self.jmp(dest),
+            IR::Jb { dest } => self.jb(dest),
+            IR::Jbe { dest } => self.jbe(dest),
+            IR::Jnb { dest } => self.jnb(dest),
+            IR::Jne { dest } => self.jne(dest),
+            IR::Je { dest } => self.je(dest),
+            IR::Jl { dest } => self.jl(dest),
+            IR::Jle { dest } => self.jle(dest),
+            IR::Jnl { dest } => self.jnl(dest),
+            IR::Jnle { dest } => self.jnle(dest),
+            IR::Jnbe { dest } => self.jnbe(dest),
+            IR::Test { dest, src, byte: _ } => self.test(dest, src),
+            IR::Push { src } => self.push(src),
+            IR::Pop { dest } => self.pop(dest),
+            IR::Call { dest } => self.call(dest),
+            IR::Ret { src } => self.ret(src),
+            IR::In { dest, src } => self.in_(dest, src),
+            IR::Loop { dest } => self.loop_(dest),
+            IR::Loopz { dest } => self.loopz(dest),
+            IR::Loopnz { dest } => self.loopnz(dest),
+            IR::Or { dest, src } => self.or(dest, src),
+            IR::Sub { dest, src } => self.sub(dest, src),
+            IR::Dec { dest } => self.dec(dest),
+            IR::Cbw => self.cbw(),
+            IR::Inc { dest } => self.inc(dest),
+            IR::And { dest, src } => self.and(dest, src),
+            IR::Shl { dest, src } => self.shl(dest, src),
+            IR::Hlt => Ok(()), // we handle it directly in the run loop
             _ => panic!("{}: Not implemented", ir),
         }
     }
 
     fn run(&mut self) -> Result<(), InterpreterError> {
-        trace!(" AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP");
+        trace!(" AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP\n");
         let mut cycle_count = 0;
         while let Some(ir) = self.fetch() {
             let (decoded_ir, ir_len) = self.decode(ir);
+
+            match decoded_ir {
+                IR::Hlt => {
+                    return Ok(());
+                }
+                _ => {}
+            }
 
             // Trace with format:
             //  AX   BX   CX   DX   SP   BP   SI   DI  FLAGS IP
             // 0000 0000 0000 0000 0000 0000 0000 0000 ---- 0000:bb0000     mov bx, 000
             trace!(
-                "{}       \t{}",
+                "{:<62} {}",
                 {
                     let mut regs = String::new();
                     for reg in vec![
@@ -246,11 +214,23 @@ impl VmIrExecutable for VM {
             // Increment the instruction pointer (ip) appropriately
             self.ip += ir_len as u16;
 
-            self.execute(decoded_ir);
+            match self.execute(decoded_ir) {
+                Ok(_) => {}
+                Err(e) => match e {
+                    OpcodeExecErrors::ExitCatch => {
+                        trace!("\n");
+                        return Ok(());
+                    }
+                    _ => {
+                        return Err(InterpreterError::OpcodeExecutionError(e));
+                    }
+                },
+            };
 
+            trace!("\n");
             // Check cycle count
             cycle_count += 1;
-            if cycle_count > 10000 {
+            if cycle_count > 999999 {
                 return Err(InterpreterError::CycleLimitExceeded);
             }
         }
@@ -270,17 +250,24 @@ impl Interpretable for Program {
     }
 }
 
-impl VM {
-    fn get_effective_address(&self, address: Address) -> u16 {
-        let base = match address.base {
-            Some(b) => self.regs.get(b) as i16,
+trait VirtualMemory {
+    fn get_effective_address(&self, vm: &VM) -> u16;
+    fn read_value(&self, vm: &VM) -> i16;
+    fn write_value(&self, vm: &mut VM, value: u16);
+    fn trace(&self, vm: &VM);
+}
+
+impl VirtualMemory for Address {
+    fn get_effective_address(&self, vm: &VM) -> u16 {
+        let base = match self.base {
+            Some(b) => vm.regs.get(b) as i16,
             None => 0,
         };
-        let index = match address.index {
-            Some(i) => self.regs.get(i) as i16,
+        let index = match self.index {
+            Some(i) => vm.regs.get(i) as i16,
             None => 0,
         };
-        let disp = match address.disp {
+        let disp = match self.disp {
             Some(d) => match d {
                 Displacement::Short(d) => d as i16,
                 Displacement::Long(d) => d,
@@ -291,18 +278,35 @@ impl VM {
         base.wrapping_add(index).wrapping_add(disp) as u16
     }
 
+    fn read_value(&self, vm: &VM) -> i16 {
+        let ea = self.get_effective_address(vm);
+        let ev = vm.data.read_word(ea) as i16;
+        trace!(" ;[{:04x}]{:04x}", ea, ev);
+        ev
+    }
+
+    fn write_value(&self, vm: &mut VM, value: u16) {
+        let ea = self.get_effective_address(vm);
+        let ev = vm.data.read_word(ea);
+        trace!(" ;[{:04x}]{:04x}", ea, ev);
+        vm.data.write_word(ea, value);
+    }
+
+    fn trace(&self, vm: &VM) {
+        let ea = self.get_effective_address(vm);
+        let ev = vm.data.read_word(ea);
+        trace!(" ;[{:04x}]{:04x}", ea, ev);
+    }
+}
+
+impl VM {
     fn read_value(&self, operand: &Operand) -> i16 {
         match operand {
             Operand::Register(reg) => self.regs.get(*reg) as i16,
             Operand::Immediate(value) => *value as i16,
             Operand::LongImmediate(value) => *value as i16,
             Operand::SignExtendedImmediate(value) => *value as i16,
-            Operand::MemoryAddress(address) => {
-                let ea = self.get_effective_address(*address);
-                let ev = self.data.read_word(ea) as i16;
-                trace!(";[{:04x}]{:04x}", ea, ev);
-                ev
-            }
+            Operand::MemoryAddress(address) => address.read_value(self),
             Operand::Displacement(value) => match value {
                 Displacement::Short(d) => *d as i16,
                 Displacement::Long(d) => *d,
@@ -314,10 +318,7 @@ impl VM {
     fn write_value(&mut self, operand: &Operand, value: u16) {
         match operand {
             Operand::Register(reg) => self.regs.set(*reg, value),
-            Operand::MemoryAddress(address) => {
-                let ea = self.get_effective_address(*address);
-                self.data.write_word(ea, value);
-            }
+            Operand::MemoryAddress(address) => address.write_value(self, value),
             _ => panic!("Invalid operand"),
         }
     }
