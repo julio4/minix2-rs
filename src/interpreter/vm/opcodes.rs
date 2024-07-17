@@ -38,6 +38,11 @@ pub trait OpcodeExecutable {
     fn inc(&mut self, dest: Operand) -> Result<(), OpcodeExecErrors>;
     fn and(&mut self, dest: Operand, src: Operand) -> Result<(), OpcodeExecErrors>;
     fn shl(&mut self, dest: Operand, src: Operand) -> Result<(), OpcodeExecErrors>;
+    fn neg(&mut self, dest: Operand) -> Result<(), OpcodeExecErrors>;
+    fn cwd(&mut self) -> Result<(), OpcodeExecErrors>;
+    fn div(&mut self, src: Operand) -> Result<(), OpcodeExecErrors>;
+    fn xchg(&mut self, dest: Operand, src: Operand) -> Result<(), OpcodeExecErrors>;
+    fn sar(&mut self, dest: Operand, src: Operand) -> Result<(), OpcodeExecErrors>;
 }
 
 // Small trick to not exit the program when running tests
@@ -65,31 +70,43 @@ impl OpcodeExecutable for VM {
                 //     union m_u;
                 // };
                 let message_struct_ea = self.regs.get(Register::BX) as u16;
-                let message_type = self.data.read_word(message_struct_ea + 2);
+                let message_type_ea = message_struct_ea + 2;
+                let i1_ea = message_struct_ea + 4;
+                let i2_ea = message_struct_ea + 6;
+                let i3_ea = message_struct_ea + 8;
+                let m1_p1_ea = message_struct_ea + 10;
+                let m2_p1_ea = message_struct_ea + 18;
 
+                let message_type = self.data.read_word(message_type_ea);
                 match message_type {
                     1 => {
-                        let status = self.data.read_word(message_struct_ea + 4);
+                        // exit(status)
+                        // status = m1_i1
+                        let status = self.data.read_word(i1_ea);
                         self.trace(format!("\n<exit({})>", status).as_str());
                         exec_exit(status as i32);
                         return Err(OpcodeExecErrors::ExitCatch);
                     }
                     4 => {
-                        // _sendrec
-                        let content_len = self.data.read_word(message_struct_ea + 6);
-                        let content_ea = self.data.read_word(message_struct_ea + 10);
+                        // write(fd, buffer, nbytes)
+                        // fd = m1_i1
+                        // nbytes = m1_i2
+                        // buffer = m1_p1
+                        let nbytes = self.data.read_word(i2_ea);
+                        let buffer = self.data.read_word(m1_p1_ea);
+
                         // set AX to 0
                         self.regs.set(Register::AX, 0);
                         // Return nb of bytes written
-                        self.data.write_word(message_struct_ea + 2, content_len);
+                        let return_value = nbytes;
+                        self.data.write_word(message_type_ea, nbytes);
 
-                        let content = String::from_utf8_lossy(
-                            self.data.read_bytes(content_ea, content_len as usize),
-                        );
+                        let content =
+                            String::from_utf8_lossy(self.data.read_bytes(buffer, nbytes as usize));
                         self.trace(
                             format!(
                                 "\n<write({}, {:#06x}, {}){} => {}>",
-                                1, content_ea, content_len, content, content_len
+                                1, buffer, nbytes, content, return_value
                             )
                             .as_str(),
                         );
@@ -100,19 +117,30 @@ impl OpcodeExecutable for VM {
                         Ok(())
                     }
                     17 => {
-                        // BRK
-                        self.trace(format!("\n<brk(todo)").as_str());
+                        // brk(addr)
+                        // addr = m1_p1
+                        let addr = self.data.read_word(m1_p1_ea);
+
+                        // return 0
+                        self.data.write_word(message_type_ea, 0);
+                        self.trace(format!("\n<brk({:#06x}) => {}>", addr, 0).as_str());
                         Ok(())
                     }
                     54 => {
-                        // IOCTL
-                        let content_len = self.data.read_word(message_struct_ea + 6);
-                        let content_ea = self.data.read_word(message_struct_ea + 10);
+                        // ioctl(fd, request, data)
+                        // fd = TTY_LINE = DEVICE = m2_i1
+                        // request = TTY_REQUEST = COUNT = m2_i3
+                        // data = ADDRESS = m2_p1
+                        let fd = self.data.read_word(i1_ea);
+                        let request = self.data.read_word(i3_ea);
+                        let data = self.data.read_word(m2_p1_ea);
                         self.trace(
-                            format!("<ioctl(todo, {:#04x}, {:#04x})>", content_ea, content_len,)
-                                .as_str(),
+                            format!("\n<ioctl({}, {:#04x}, {:#04x})>", fd, request, data).as_str(),
                         );
-                        // What to do?
+
+                        // return ffea (not sure why yet)
+                        self.data.write_word(message_type_ea, 0xffea);
+
                         // set AX to 0
                         self.regs.set(Register::AX, 0);
                         Ok(())
@@ -305,6 +333,7 @@ impl OpcodeExecutable for VM {
         let released_bytes = match src {
             Some(src) => match src {
                 Operand::Immediate(value) => value as u16,
+                Operand::LongImmediate(value) => value,
                 _ => panic!("Invalid operand"),
             },
             None => 0,
@@ -424,6 +453,63 @@ impl OpcodeExecutable for VM {
         }
         // SF, ZF and PF based on result
         self.flags.set_szp(result);
+        Ok(())
+    }
+    fn neg(&mut self, dest: Operand) -> Result<(), OpcodeExecErrors> {
+        let dest_value = self.read_value(&dest);
+        let (result, overflow) = dest_value.overflowing_neg();
+
+        self.write_value(&dest, result as u16);
+
+        // CF = 0 if dest is 0
+        self.flags.set(Flag::Carry, dest_value != 0);
+        self.flags.set(Flag::Overflow, overflow);
+        // SF, ZF and PF based on result
+        self.flags.set_szp(result);
+        Ok(())
+    }
+    fn cwd(&mut self) -> Result<(), OpcodeExecErrors> {
+        let ax = self.regs.get(Register::AX) as i16;
+        let dx = if ax < 0 { 0xffff } else { 0x0000 };
+        self.regs.set(Register::DX, dx);
+        Ok(())
+    }
+    fn div(&mut self, src: Operand) -> Result<(), OpcodeExecErrors> {
+        let src_value = self.read_value(&src);
+        let ax = self.regs.get(Register::AX) as u16;
+        let dx = self.regs.get(Register::DX) as u16;
+        let dividend = (dx as u32) << 16 | ax as u32;
+        let quotient = dividend / src_value as u32;
+        let remainder = dividend % src_value as u32;
+
+        if quotient > 0xffff {
+            return Err(OpcodeExecErrors::DivideError);
+        }
+
+        self.regs.set(Register::AX, quotient as u16);
+        self.regs.set(Register::DX, remainder as u16);
+        Ok(())
+    }
+    fn xchg(&mut self, dest: Operand, src: Operand) -> Result<(), OpcodeExecErrors> {
+        let dest_value = self.read_value(&dest);
+        let src_value = self.read_value(&src);
+
+        self.write_value(&dest, src_value as u16);
+        self.write_value(&src, dest_value as u16);
+        Ok(())
+    }
+    fn sar(&mut self, dest: Operand, src: Operand) -> Result<(), OpcodeExecErrors> {
+        let src_value = self.read_value(&src);
+        let dest_value = self.read_value(&dest);
+        let result = (dest_value as i16 >> src_value) as u16;
+
+        self.write_value(&dest, result as u16);
+
+        // CF flag contains last bit shifted out
+        self.flags
+            .set(Flag::Carry, (dest_value & (1 << (src_value - 1))) != 0);
+        // SF, ZF and PF based on result
+        self.flags.set_szp(result as i16);
         Ok(())
     }
 }

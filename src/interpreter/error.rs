@@ -3,6 +3,7 @@ pub enum OpcodeExecErrors {
     ExitCatch,
     UnimplementedSyscall(usize),
     UnimplementedInterrupt(usize),
+    DivideError,
 }
 
 impl std::fmt::Display for OpcodeExecErrors {
@@ -13,6 +14,7 @@ impl std::fmt::Display for OpcodeExecErrors {
             OpcodeExecErrors::UnimplementedInterrupt(n) => {
                 write!(f, "Unimplemented interrupt {}", n)
             }
+            OpcodeExecErrors::DivideError => write!(f, "Divide error"),
         }
     }
 }

@@ -141,6 +141,11 @@ impl VmIrExecutable for VM {
             IR::Inc { dest } => self.inc(dest),
             IR::And { dest, src } => self.and(dest, src),
             IR::Shl { dest, src } => self.shl(dest, src),
+            IR::Neg { dest } => self.neg(dest),
+            IR::Cwd => self.cwd(),
+            IR::Div { dest } => self.div(dest),
+            IR::Xchg { dest, src } => self.xchg(dest, src),
+            IR::Sar { dest, src } => self.sar(dest, src),
             IR::Hlt => Ok(()), // we handle it directly in the run loop
             _ => panic!("{}: Not implemented", ir),
         }
