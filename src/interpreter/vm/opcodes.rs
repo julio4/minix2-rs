@@ -65,13 +65,13 @@ impl OpcodeExecutable for VM {
                 //     union m_u;
                 // };
                 let message_struct_ea = self.regs.get(Register::BX) as u16;
-                let message_source = self.data.read_word(message_struct_ea);
                 let message_type = self.data.read_word(message_struct_ea + 2);
 
                 match message_type {
                     1 => {
-                        self.trace(format!("\n<exit({})>", message_source).as_str());
-                        exec_exit(message_source as i32);
+                        let status = self.data.read_word(message_struct_ea + 4);
+                        self.trace(format!("\n<exit({})>", status).as_str());
+                        exec_exit(status as i32);
                         return Err(OpcodeExecErrors::ExitCatch);
                     }
                     4 => {
@@ -101,7 +101,7 @@ impl OpcodeExecutable for VM {
                     }
                     17 => {
                         // BRK
-                        self.trace(format!("\n<brk({})>", message_source).as_str());
+                        self.trace(format!("\n<brk(todo)").as_str());
                         Ok(())
                     }
                     54 => {
@@ -109,11 +109,8 @@ impl OpcodeExecutable for VM {
                         let content_len = self.data.read_word(message_struct_ea + 6);
                         let content_ea = self.data.read_word(message_struct_ea + 10);
                         self.trace(
-                            format!(
-                                "<ioctl({}, {:#04x}, {:#04x})>",
-                                message_source, content_ea, content_len,
-                            )
-                            .as_str(),
+                            format!("<ioctl(todo, {:#04x}, {:#04x})>", content_ea, content_len,)
+                                .as_str(),
                         );
                         // What to do?
                         // set AX to 0
