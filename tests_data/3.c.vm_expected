@@ -44,8 +44,8 @@
 001e ffd0 ffe0 ffdc fb9e ffbc 0000 0000 -S-- 02a9:8b7608       mov si, [bp+8] ;[ffc4]001e
 001e ffd0 ffe0 ffdc fb9e ffbc 001e 0000 -S-- 02ac:c746ec0000   mov [bp-14], 0000 ;[ffa8]0000
 001e ffd0 ffe0 ffdc fb9e ffbc 001e 0000 -S-- 02b1:8b5e04       mov bx, [bp+4] ;[ffc0]0004
-001e 0004 ffe0 ffdc fb9e ffbc 001e 0000 -S-- 02b4:ff4604       inc [bp+4] ;[ffc0]0004
-001e 0004 ffe0 ffdc fb9e ffbc 001e 0000 ---- 02b7:8a07         mov al, [bx] ;[0004]68
+001e 0004 ffe0 ffdc fb9e ffbc 001e 0000 -S-- 02b4:ff4604       inc [bp+4] ;[ffc0]0004 ;[ffc0]0004
+001e 0004 ffe0 ffdc fb9e ffbc 001e 0000 ---- 02b7:8a07         mov al, [bx] ;[0004]6568
 0068 0004 ffe0 ffdc fb9e ffbc 001e 0000 ---- 02b9:98           cbw
 0068 0004 ffe0 ffdc fb9e ffbc 001e 0000 ---- 02ba:8946f8       mov [bp-8], ax ;[ffb4]0000
 0068 0004 ffe0 ffdc fb9e ffbc 001e 0000 ---- 02bd:09c0         or ax, ax
@@ -70,13 +70,13 @@
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 -S-- 0848:c7060e003710 mov [000e], 1037 ;[000e]0000
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 -S-- 084e:837c0200     cmp [si+2], 0 ;[0020]0001
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 0852:7d07         jnl 085b
-0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 085b:f6440402     test byte [si+4], 2 ;[0022]02
+0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 085b:f6440402     test byte [si+4], 2 ;[0022]0002
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 085f:7506         jne 0867
-0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 0867:f6440480     test byte [si+4], 80 ;[0022]02
+0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 0867:f6440480     test byte [si+4], 80 ;[0022]0002
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 --Z- 086b:740c         je 0879
-0068 0004 ffe0 ffff fb8e fb96 001e 0068 --Z- 0879:8164047fff   and [si+4], ff7f ;[0022]0002
-0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 087e:814c040001   or [si+4], 0100 ;[0022]0002
-0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 0883:f6440404     test byte [si+4], 4 ;[0022]02
+0068 0004 ffe0 ffff fb8e fb96 001e 0068 --Z- 0879:8164047fff   and [si+4], ff7f ;[0022]0002 ;[0022]0002
+0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 087e:814c040001   or [si+4], 0100 ;[0022]0002 ;[0022]0002
+0068 0004 ffe0 ffff fb8e fb96 001e 0068 ---- 0883:f6440404     test byte [si+4], 4 ;[0022]0102
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 --Z- 0887:7403         je 088c
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 --Z- 088c:837c0800     cmp [si+8], 0 ;[0026]0000
 0068 0004 ffe0 ffff fb8e fb96 001e 0068 --Z- 0890:7403         je 0895
