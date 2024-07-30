@@ -248,12 +248,13 @@ impl VmIrExecutable for VM {
 }
 
 pub trait Interpretable {
-    fn interpret(self, trace: bool) -> Result<(), InterpreterError>;
+    fn interpret(self, trace: bool, args: Vec<String>) -> Result<(), InterpreterError>;
 }
 
 impl Interpretable for Program {
-    fn interpret(self, trace: bool) -> Result<(), InterpreterError> {
+    fn interpret(self, trace: bool, args: Vec<String>) -> Result<(), InterpreterError> {
         let mut vm = VM::from(self);
+        vm.set_args(args);
         vm.set_trace(trace);
         vm.run()
     }
@@ -341,6 +342,47 @@ impl VM {
             print!("{}", str);
         }
     }
+
+    fn set_args(&mut self, args: Vec<String>) {
+        let mut argv_pointers = Vec::new();
+
+        let mut total_length = 0;
+        for arg in &args {
+            total_length += arg.len() + 1; // each argument string + null terminator
+        }
+
+        let initial_sp = self.regs.get(Register::SP);
+        self.regs
+            .set(Register::SP, initial_sp.wrapping_sub(total_length as u16));
+
+        let mut current_sp = initial_sp.wrapping_sub(total_length as u16);
+        for arg in &args {
+            argv_pointers.push(current_sp); // Record the pointer to this argument
+
+            // Copy the argument string and null terminator into memory
+            for byte in arg.bytes() {
+                self.data.write_bytes(current_sp, &[byte]);
+                current_sp = current_sp.wrapping_add(1);
+            }
+            self.data.write_bytes(current_sp, &[0]); // Null terminator
+            current_sp = current_sp.wrapping_add(1);
+        }
+
+        self.regs
+            .set(Register::SP, self.regs.get(Register::SP).wrapping_sub(2));
+        self.data.write_word(self.regs.get(Register::SP), 0);
+
+        for &pointer in argv_pointers.iter() {
+            self.regs
+                .set(Register::SP, self.regs.get(Register::SP).wrapping_sub(2));
+            self.data.write_word(self.regs.get(Register::SP), pointer);
+        }
+
+        let argc = argv_pointers.len() as u16;
+        self.regs
+            .set(Register::SP, self.regs.get(Register::SP).wrapping_sub(2));
+        self.data.write_word(self.regs.get(Register::SP), argc);
+    }
 }
 
 impl std::fmt::Display for VM {
@@ -360,17 +402,19 @@ impl std::fmt::Display for VM {
 pub fn vm_interpret(args: Vec<String>) {
     // Args validation
     if args.len() < 2 {
-        println!("Usage: {} <binary file> [-m]", args[0]);
+        println!("Usage: {} <binary file> [-m] additional_args", args[0]);
         return;
     }
 
     // Logger
     let trace = args.len() > 2 && args[2] == "-m";
+    // remove the first arg
+    let parsed_args = args[1..].to_vec();
 
     // Open file
     let file = std::fs::File::open(&args[1]).unwrap();
     let program = Program::from_file(file).unwrap();
 
     // Interpreter
-    program.interpret(trace).unwrap();
+    program.interpret(trace, parsed_args).unwrap();
 }

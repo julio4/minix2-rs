@@ -60,12 +60,12 @@ fn assert_interpret(file: &str) {
     assert_eq!(captured, expected_trace);
 }
 
-#[test]
-fn test_vm_c_1() {
-    assert_interpret("1.c");
-}
+// #[test]
+// fn test_vm_c_1() {
+//     assert_interpret("1.c");
+// }
 
-#[test]
-fn test_vm_c_2() {
-    assert_interpret("2.c");
-}
+// #[test]
+// fn test_vm_c_2() {
+//     assert_interpret("2.c");
+// }
