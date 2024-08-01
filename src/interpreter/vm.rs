@@ -345,17 +345,16 @@ impl VM {
 
     fn set_args(&mut self, args: Vec<String>) {
         let mut argv_pointers = Vec::new();
-
         let mut total_length = 0;
+
         for arg in &args {
             total_length += arg.len() + 1; // each argument string + null terminator
         }
 
         let initial_sp = self.regs.get(Register::SP);
-        self.regs
-            .set(Register::SP, initial_sp.wrapping_sub(total_length as u16));
+        let arg_data_start = initial_sp.wrapping_sub(total_length as u16);
 
-        let mut current_sp = initial_sp.wrapping_sub(total_length as u16);
+        let mut current_sp = arg_data_start;
         for arg in &args {
             argv_pointers.push(current_sp); // Record the pointer to this argument
 
@@ -368,16 +367,19 @@ impl VM {
             current_sp = current_sp.wrapping_add(1);
         }
 
+        self.regs.set(Register::SP, arg_data_start);
+
         self.regs
             .set(Register::SP, self.regs.get(Register::SP).wrapping_sub(2));
         self.data.write_word(self.regs.get(Register::SP), 0);
 
-        for &pointer in argv_pointers.iter() {
+        for &pointer in argv_pointers.iter().rev() {
             self.regs
                 .set(Register::SP, self.regs.get(Register::SP).wrapping_sub(2));
             self.data.write_word(self.regs.get(Register::SP), pointer);
         }
 
+        // Push argc
         let argc = argv_pointers.len() as u16;
         self.regs
             .set(Register::SP, self.regs.get(Register::SP).wrapping_sub(2));
