@@ -1,20 +1,30 @@
 # minix2-rs
 
-> Highly experimental and incomplete. It was mostly an educational project!
-
 Rust crate for disassembling and interpreting Minix 2 binaries compiled for the 8086 CPU.
 It can be used as a virtual machine for Minix 2 binaries.
+
+## Note
+
+This crate is for education purposes only. A partial implementation of the instruction set is provided.
 
 ## Features
 
 - Disassembler: read a Minix 2 binary and output the sequence of CPU instructions.
 - Interpreter: execute a sequence of CPU instructions and simulate the behavior of the 8086 CPU, including the stack, registers, memory and minix2 system calls.
 
-## Note
+## Cli Usage
 
-This crate is for education pruposes only. A partial implementation of the instruction set is provided.
+Compile with `cargo build --release` and run the binary with the path to the minix binary as argument:
 
-## Usage
+```sh
+./target/release/minix2-rs path-to-binary
+```
+
+Alternatively, you can use `cargo run path-to-binary` to run it directly.
+
+You can also use the `-m` flag to output the state of the CPU registers and memory after each instruction:
+
+## Library Usage
 
 Read minix binary from file:
 
@@ -41,6 +51,10 @@ use minix2_rs::interpreter::Interpretable;
 
 program.interpret();
 ```
+
+## Documentation
+
+Use `cargo doc --open` to generate and open the documentation in your browser.
 
 ## Examples
 
